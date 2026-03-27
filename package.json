@@ -1,0 +1,63 @@
+{
+  "name": "yume-dsl-shiki-highlight",
+  "version": "0.1.0",
+  "description": "Minimal Shiki-compatible syntax highlight library for yume-dsl rich-text",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/index.d.ts",
+        "require": "./dist/index.d.cts"
+      },
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "lint": "tsc --noEmit",
+    "test": "npm run build && node tests/run-tests.mjs"
+  },
+  "keywords": [
+    "yume-dsl",
+    "dsl",
+    "shiki",
+    "syntax-highlight",
+    "rich-text",
+    "textmate-grammar"
+  ],
+  "author": "Hoshino Yumeka",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chiba233/yume-dsl-shiki-highlight.git"
+  },
+  "homepage": "https://github.com/chiba233/yume-dsl-shiki-highlight#readme",
+  "bugs": {
+    "url": "https://github.com/chiba233/yume-dsl-shiki-highlight/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "yume-dsl-rich-text": "^0.1.18"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.0"
+  }
+}
