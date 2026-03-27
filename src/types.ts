@@ -1,4 +1,9 @@
-export type { StructuralNode, StructuralParseOptions } from "yume-dsl-rich-text";
+export type {
+  StructuralNode,
+  StructuralParseOptions,
+  ParserBaseOptions,
+} from "yume-dsl-rich-text";
+import type { ParserBaseOptions } from "yume-dsl-rich-text";
 
 /** A single colored token in a highlighted line. */
 export interface HighlightToken {
@@ -29,12 +34,16 @@ export interface HighlightColors {
   contentText: string;
 }
 
-/** Options for {@link tokenizeRichText}. */
-export interface TokenizeOptions {
+/**
+ * Options for {@link tokenizeRichText} and {@link createTokenizer}.
+ *
+ * Extends {@link ParserBaseOptions} — `handlers`, `allowForms`, `syntax`,
+ * `tagName`, and `depthLimit` are forwarded to `parseStructural` so that
+ * highlighting respects the same tag/form gating as the parser.
+ */
+export interface TokenizeOptions extends ParserBaseOptions {
   /** Override default colors. */
   colors?: Partial<HighlightColors>;
-  /** Maximum tag nesting depth (default 50). */
-  depthLimit?: number;
 }
 
 /** Reusable tokenizer instance with bound default options. */
@@ -51,4 +60,20 @@ export interface GrammarTagConfig {
   rawTags: readonly string[];
   /** Tags that support block form (`$$tag(…)* … *end$$`). */
   blockTags: readonly string[];
+  /**
+   * Override tag-name character rules for validation.
+   * When provided, tag names are validated before being used in the grammar.
+   * Invalid names throw an error instead of producing a broken regex.
+   * Defaults to `DEFAULT_TAG_NAME` from `yume-dsl-rich-text`.
+   */
+  tagName?: Partial<import("yume-dsl-rich-text").TagNameConfig>;
+  /**
+   * Override the regex pattern used to match **any** tag name when
+   * the corresponding tag list is not provided.
+   *
+   * Defaults to `[a-zA-Z_][a-zA-Z0-9_-]*` (matches `DEFAULT_TAG_NAME` rules).
+   * Set this when using custom `tagName` rules so that the grammar's
+   * "match-all" fallback stays in sync with the parser.
+   */
+  anyTagPattern?: string;
 }

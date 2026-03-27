@@ -1,15 +1,35 @@
+import type { TagNameConfig } from "yume-dsl-rich-text";
+import { createTagNameConfig, DEFAULT_TAG_NAME } from "yume-dsl-rich-text";
 import type { GrammarTagConfig } from "./types.js";
 import { DEFAULT_COLORS } from "./colors.js";
 
-const escapeRegex = (value: string): string => value.replace(/[|\\{}()[\]^$+*?.-]/g, "\\$&");
+/** Escape regex metacharacters — protects against custom tagName configs that allow `.`, `*`, etc. */
+export const escapeRegex = (value: string): string => value.replace(/[|\\{}()[\]^$+*?.-]/g, "\\$&");
 
 /** Never-match pattern for empty tag lists — prevents accidental zero-width matches. */
 const NEVER_MATCH = "(?!)";
 
-const tagAlternation = (tags: readonly string[]): string =>
-  tags.length === 0 ? NEVER_MATCH : tags.map(escapeRegex).join("|");
+/**
+ * Validate and escape a single tag name into a regex-safe pattern.
+ * Throws if the name violates the provided `TagNameConfig` rules.
+ */
+const toSafeTagPattern = (name: string, config: TagNameConfig): string => {
+  if (name.length === 0 || !config.isTagStartChar(name[0])) {
+    throw new Error(`Invalid tag name for grammar: "${name}"`);
+  }
+  for (let i = 1; i < name.length; i++) {
+    if (!config.isTagChar(name[i])) {
+      throw new Error(`Invalid tag name for grammar: "${name}"`);
+    }
+  }
+  return escapeRegex(name);
+};
 
-const ANY_TAG_PATTERN = "[a-zA-Z_][a-zA-Z0-9_-]*";
+/** Join normalized tag names into a regex alternation, or `(?!)` for empty lists. */
+const tagAlternation = (tags: readonly string[], tagNameConfig: TagNameConfig): string =>
+  tags.length === 0 ? NEVER_MATCH : tags.map((t) => toSafeTagPattern(t, tagNameConfig)).join("|");
+
+const DEFAULT_ANY_TAG_PATTERN = "[a-zA-Z_][a-zA-Z0-9_-]*";
 
 const createCaptureMap = (
   ...entries: Array<[number, string]>
@@ -25,9 +45,13 @@ const SCOPE = "yume-rich-text-dsl";
  * @returns A `LanguageRegistration`-shaped object (compatible with `shiki/types`).
  */
 export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
-  const allPattern = tagConfig ? tagAlternation(tagConfig.allTags) : ANY_TAG_PATTERN;
-  const rawPattern = tagConfig ? tagAlternation(tagConfig.rawTags) : ANY_TAG_PATTERN;
-  const blockPattern = tagConfig ? tagAlternation(tagConfig.blockTags) : ANY_TAG_PATTERN;
+  const tagNameConfig = tagConfig?.tagName
+    ? createTagNameConfig(tagConfig.tagName)
+    : DEFAULT_TAG_NAME;
+  const anyPattern = tagConfig?.anyTagPattern ?? DEFAULT_ANY_TAG_PATTERN;
+  const allPattern = tagConfig ? tagAlternation(tagConfig.allTags, tagNameConfig) : anyPattern;
+  const rawPattern = tagConfig ? tagAlternation(tagConfig.rawTags, tagNameConfig) : anyPattern;
+  const blockPattern = tagConfig ? tagAlternation(tagConfig.blockTags, tagNameConfig) : anyPattern;
 
   return {
     name: "yume-rich-text-dsl",
@@ -48,10 +72,6 @@ export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
       "pipe-divider": {
         match: "\\|",
         name: `punctuation.separator.arguments.${SCOPE}`,
-      },
-      "tag-name": {
-        match: allPattern,
-        name: `entity.name.tag.${SCOPE}`,
       },
       "inline-tag": {
         begin: `(\\$\\$)(${allPattern})(\\()`,

@@ -4,8 +4,6 @@ import type { HighlightColors, HighlightToken, TokenizeOptions, Tokenizer } from
 import { resolveColors } from "./colors.js";
 import { parseStructural } from "yume-dsl-rich-text";
 
-const BLOCK_END = "end";
-
 /** Precomputed syntax tokens needed by the renderer. */
 interface RenderSyntax {
   tagPrefix: string;
@@ -14,16 +12,28 @@ interface RenderSyntax {
   tagDivider: string;
   rawMarker: string;
   blockMarker: string;
+  rawEndWord: string;
+  blockEndWord: string;
 }
 
-const buildRenderSyntax = (s: SyntaxInput): RenderSyntax => ({
-  tagPrefix: s.tagPrefix,
-  tagOpen: s.tagOpen,
-  tagClose: s.tagClose,
-  tagDivider: s.tagDivider,
-  rawMarker: s.rawOpen.slice(s.tagClose.length),
-  blockMarker: s.blockOpen.slice(s.tagClose.length),
-});
+/** Derive the "end word" between a marker and tagPrefix: e.g. "%end$$" → "end" */
+const deriveEndWord = (closeToken: string, marker: string, tagPrefix: string): string =>
+  closeToken.slice(marker.length, closeToken.length - tagPrefix.length);
+
+const buildRenderSyntax = (s: SyntaxInput): RenderSyntax => {
+  const rawMarker = s.rawOpen.slice(s.tagClose.length);
+  const blockMarker = s.blockOpen.slice(s.tagClose.length);
+  return {
+    tagPrefix: s.tagPrefix,
+    tagOpen: s.tagOpen,
+    tagClose: s.tagClose,
+    tagDivider: s.tagDivider,
+    rawMarker,
+    blockMarker,
+    rawEndWord: deriveEndWord(s.rawClose, rawMarker, s.tagPrefix),
+    blockEndWord: deriveEndWord(s.blockClose, blockMarker, s.tagPrefix),
+  };
+};
 
 // ── Token helpers ──
 
@@ -141,7 +151,7 @@ const renderNodes = (
         tokens.push(t),
       );
       pushToken(tokens, s.rawMarker, colors.operator, "bold");
-      pushToken(tokens, BLOCK_END, colors.end, "bold");
+      pushToken(tokens, s.rawEndWord, colors.end, "bold");
       pushToken(tokens, s.tagPrefix, colors.punct, "bold");
       continue;
     }
@@ -150,7 +160,7 @@ const renderNodes = (
     pushToken(tokens, s.blockMarker, colors.operator, "bold");
     renderNodes(node.children, colors, s, colors.contentText).forEach((t) => tokens.push(t));
     pushToken(tokens, s.blockMarker, colors.operator, "bold");
-    pushToken(tokens, BLOCK_END, colors.end, "bold");
+    pushToken(tokens, s.blockEndWord, colors.end, "bold");
     pushToken(tokens, s.tagPrefix, colors.punct, "bold");
   }
 
@@ -186,7 +196,13 @@ const mergeTokenizeOptions = (
 
 const renderTokens = (text: string, options?: TokenizeOptions): HighlightToken[] => {
   const colors = resolveColors(options?.colors);
-  const tree = parseStructural(text, { depthLimit: options?.depthLimit ?? 50 });
+  const tree = parseStructural(text, {
+    handlers: options?.handlers,
+    allowForms: options?.allowForms,
+    depthLimit: options?.depthLimit,
+    syntax: options?.syntax,
+    tagName: options?.tagName,
+  });
   return renderStructuralTree(tree, colors);
 };
 
@@ -209,9 +225,40 @@ export const tokenizeRichTextLines = (
   return splitTokensByLineBreak(renderTokens(text, options));
 };
 
+/**
+ * Create a reusable tokenizer with bound default options.
+ *
+ * Accepts all {@link TokenizeOptions} fields including `handlers`, `allowForms`,
+ * `syntax`, and `tagName` — these are forwarded to `parseStructural` so that
+ * highlighting respects the same tag/form gating as the parser.
+ */
 export const createTokenizer = (defaults: TokenizeOptions = {}): Tokenizer => ({
   tokenize: (text, overrides) =>
     tokenizeRichText(text, overrides ? mergeTokenizeOptions(defaults, overrides) : defaults),
   tokenizeLines: (text, overrides) =>
     tokenizeRichTextLines(text, overrides ? mergeTokenizeOptions(defaults, overrides) : defaults),
 });
+
+/**
+ * Create a tokenizer that inherits tag/form gating from parser config.
+ *
+ * Accepts `ParseOptions` directly — semantic-only fields (`mode`, `onError`,
+ * `blockTags`, `createId`) are harmlessly ignored at runtime.
+ *
+ * @example
+ * ```ts
+ * import { createParser, ParseOptions } from "yume-dsl-rich-text";
+ * import { createTokenizerFromParser } from "yume-dsl-shiki-highlight";
+ *
+ * const opts: ParseOptions = { handlers, allowForms: ["inline"], mode: "render" };
+ * const dsl = createParser(opts);
+ * const tokenizer = createTokenizerFromParser(opts, { tagName: "#FF0000" });
+ * // dsl.parse(text) and tokenizer.tokenize(text) share the same gating rules
+ * ```
+ */
+export const createTokenizerFromParser = (
+  parserOptions: TokenizeOptions,
+  colors?: Partial<HighlightColors>,
+): Tokenizer => {
+  return createTokenizer({ ...parserOptions, colors });
+};

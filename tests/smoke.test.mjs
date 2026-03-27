@@ -1,0 +1,230 @@
+import assert from "node:assert/strict";
+
+const mod = await import("../dist/index.js");
+const richText = await import("yume-dsl-rich-text");
+
+const {
+  createTokenizer,
+  createTokenizerFromParser,
+  tokenizeRichText,
+  tokenizeRichTextLines,
+  createRichTextGrammar,
+  escapeRegex,
+} = mod;
+const { createSyntax, withSyntax, createSimpleInlineHandlers, createSimpleRawHandlers } = richText;
+
+const normalize = (tokens) =>
+  tokens.map((token) => ({
+    content: token.content,
+    color: token.color,
+    fontStyle: token.fontStyle,
+  }));
+
+const joinTokenText = (tokens) => tokens.map((token) => token.content).join("");
+
+// ── createTokenizer defaults/overrides ──
+
+const syntax = {
+  tagPrefix: "@@",
+  tagOpen: "<<",
+  tagClose: ">>",
+  tagDivider: "||",
+  endTag: ">>@@",
+  rawOpen: ">>%",
+  blockOpen: ">>*",
+  rawClose: "%fin@@",
+  blockClose: "*fin@@",
+  escapeChar: "~",
+};
+
+const tokenizer = createTokenizer({
+  colors: {
+    tagName: "#111111",
+    separator: "#222222",
+  },
+  depthLimit: 7,
+});
+
+assert.deepEqual(
+  normalize(tokenizer.tokenize("@@link<<a || b>>@@", { colors: { separator: "#333333" } })),
+  normalize(
+    tokenizeRichText("@@link<<a || b>>@@", {
+      colors: {
+        tagName: "#111111",
+        separator: "#333333",
+      },
+      depthLimit: 7,
+    }),
+  ),
+);
+console.log("PASS createTokenizer defaults/overrides");
+
+// ── withSyntax closure inheritance ──
+
+withSyntax(createSyntax(syntax), () => {
+  assert.deepEqual(normalize(tokenizeRichText("@@link<<a || b>>@@")), [
+    { content: "@@", color: "#CF222E", fontStyle: "bold" },
+    { content: "link", color: "#0550AE", fontStyle: "bold" },
+    { content: "<<", color: "#6639BA", fontStyle: undefined },
+    { content: "a ", color: "#0A3069", fontStyle: undefined },
+    { content: "||", color: "#953800", fontStyle: "bold" },
+    { content: " b", color: "#0A3069", fontStyle: undefined },
+    { content: ">>", color: "#6639BA", fontStyle: undefined },
+    { content: "@@", color: "#CF222E", fontStyle: "bold" },
+  ]);
+
+  const source = "@@code<<ts>>%\nconst x = 1;\n%fin@@";
+  const lineTokens = tokenizeRichTextLines(source);
+  assert.equal(lineTokens.length, 3);
+  assert.equal(
+    lineTokens.map((line) => joinTokenText(line)).join("\n"),
+    joinTokenText(tokenizeRichText(source)),
+  );
+
+  // rawEndWord derived from custom rawClose "%fin@@" → "fin"
+  const flat = tokenizeRichText(source);
+  const rawEndToken = flat.find((t) => t.content === "fin");
+  assert.ok(rawEndToken, "rawEndWord should be 'fin' from custom rawClose");
+  assert.equal(rawEndToken.color, "#8250DF");
+
+  // blockEndWord derived from custom blockClose "*stop@@" → "stop" (different from raw)
+  const blockSyntax = {
+    ...syntax,
+    rawClose: "%done@@",
+    blockClose: "*stop@@",
+  };
+  withSyntax(createSyntax(blockSyntax), () => {
+    const blockSource = "@@info<<title>>*\ncontent\n*stop@@";
+    const blockFlat = tokenizeRichText(blockSource);
+    const blockEndToken = blockFlat.find((t) => t.content === "stop");
+    assert.ok(blockEndToken, "blockEndWord should be 'stop' from custom blockClose");
+    assert.equal(blockEndToken.color, "#8250DF");
+
+    // raw uses "done", not "stop"
+    const rawSource2 = "@@code<<ts>>%\ncode\n%done@@";
+    const rawFlat2 = tokenizeRichText(rawSource2);
+    const rawEndToken2 = rawFlat2.find((t) => t.content === "done");
+    assert.ok(rawEndToken2, "rawEndWord should be 'done', independent from blockEndWord");
+  });
+});
+
+console.log("PASS withSyntax closure inheritance + independent raw/block endWord");
+
+// ── tokenizeRichTextLines consistency ──
+
+const linesSource = "$$code(ts)%\nconst x = 1;\n%end$$";
+const lines = tokenizeRichTextLines(linesSource);
+assert.equal(lines.length, 3);
+assert.equal(
+  lines.map((line) => joinTokenText(line)).join("\n"),
+  joinTokenText(tokenizeRichText(linesSource)),
+);
+console.log("PASS tokenizeRichTextLines consistency");
+
+// ── TokenizeOptions transparently forwards handlers/allowForms ──
+
+const handlers = {
+  ...createSimpleInlineHandlers(["bold"]),
+  ...createSimpleRawHandlers(["code"]),
+};
+
+// With handlers: "bold" (inline) recognized; "code" (raw-only) rejects inline syntax
+const gatedTokens = tokenizeRichText("$$bold(ok)$$ $$code(x)$$", { handlers });
+const tagNames = gatedTokens.filter((t) => t.fontStyle === "bold" && t.color === "#0550AE").map((t) => t.content);
+assert.ok(tagNames.includes("bold"), "bold should be highlighted as tag");
+assert.ok(!tagNames.includes("code"), "raw-only tag should NOT be highlighted with inline syntax");
+console.log("PASS TokenizeOptions forwards handlers (tag gating)");
+
+// allowForms: only inline → raw syntax degrades
+const inlineOnlyTokens = tokenizeRichText("$$code(ts)%\nconst x=1;\n%end$$", {
+  handlers,
+  allowForms: ["inline"],
+});
+const hasCodeTag = inlineOnlyTokens.some((t) => t.content === "code" && t.fontStyle === "bold");
+assert.ok(!hasCodeTag, "raw form should degrade when allowForms excludes raw");
+console.log("PASS TokenizeOptions forwards allowForms");
+
+// ── createTokenizerFromParser ──
+
+const parserOpts = { handlers, allowForms: ["inline"] };
+const hlFromParser = createTokenizerFromParser(parserOpts, { tagName: "#FF0000" });
+
+const parserTokens = hlFromParser.tokenize("$$bold(ok)$$ $$code(ts)%\nx\n%end$$");
+const boldTag = parserTokens.find((t) => t.content === "bold");
+assert.ok(boldTag, "bold should exist");
+assert.equal(boldTag.color, "#FF0000", "custom color should be applied");
+
+const codeTag = parserTokens.find((t) => t.content === "code" && t.fontStyle === "bold");
+assert.ok(!codeTag, "raw-only tag should degrade with allowForms=['inline']");
+
+// tokenizeLines also works
+const parserLines = hlFromParser.tokenizeLines("$$bold(ok)$$\nplain");
+assert.equal(parserLines.length, 2);
+console.log("PASS createTokenizerFromParser");
+
+// ── Grammar: tagName validation ──
+
+assert.throws(
+  () => createRichTextGrammar({ allTags: ["valid", ""], rawTags: [], blockTags: [] }),
+  /Invalid tag name/,
+);
+assert.throws(
+  () => createRichTextGrammar({ allTags: ["123bad"], rawTags: [], blockTags: [] }),
+  /Invalid tag name/,
+);
+// Invalid mid-character (space in tag name)
+assert.throws(
+  () => createRichTextGrammar({ allTags: ["bad tag"], rawTags: [], blockTags: [] }),
+  /Invalid tag name/,
+);
+// With custom tagName that allows digits at start
+assert.doesNotThrow(() =>
+  createRichTextGrammar({
+    allTags: ["123ok"],
+    rawTags: [],
+    blockTags: [],
+    tagName: { isTagStartChar: (c) => /[a-zA-Z_0-9]/.test(c) },
+  }),
+);
+// Custom tagName allowing regex metachar (dot) → escape must protect the pattern
+{
+  const dotGrammar = createRichTextGrammar({
+    allTags: ["ns.tag"],
+    rawTags: [],
+    blockTags: [],
+    tagName: {
+      isTagStartChar: (c) => /[a-zA-Z_]/.test(c),
+      isTagChar: (c) => /[a-zA-Z0-9_.]/.test(c),
+    },
+  });
+  // The dot must be escaped to \. in the regex, not left as wildcard
+  assert.match(dotGrammar.repository["inline-tag"].begin, /ns\\\.tag/);
+}
+console.log("PASS grammar tagName validation + escape");
+
+// ── Grammar: anyTagPattern override ──
+
+const customGrammar = createRichTextGrammar({
+  allTags: ["bold"],
+  rawTags: [],
+  blockTags: [],
+  anyTagPattern: "[a-zA-Z_0-9][a-zA-Z0-9_:-]*",
+});
+// allTags is provided → uses tag list, not anyTagPattern for inline
+assert.match(customGrammar.repository["inline-tag"].begin, /bold/);
+// rawTags is empty → uses NEVER_MATCH (not anyTagPattern since tags IS provided)
+assert.match(customGrammar.repository["raw-tag"].begin, /\(\?!\)/);
+console.log("PASS grammar anyTagPattern override");
+
+// ── Grammar: no tagConfig → uses default anyTagPattern ──
+
+const defaultGrammar = createRichTextGrammar();
+assert.match(defaultGrammar.repository["inline-tag"].begin, /\[a-zA-Z_\]/);
+console.log("PASS grammar default anyTagPattern");
+
+// ── escapeRegex ──
+
+assert.equal(escapeRegex("hello"), "hello");
+assert.equal(escapeRegex("a.b*c"), "a\\.b\\*c");
+assert.equal(escapeRegex("ns:tag"), "ns:tag"); // colon is not a regex metachar
+console.log("PASS escapeRegex");

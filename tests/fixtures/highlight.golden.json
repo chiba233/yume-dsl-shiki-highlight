@@ -1,0 +1,92 @@
+{
+  "tokenCases": [
+    {
+      "name": "plain text",
+      "input": "hello world",
+      "expected": [
+        { "content": "hello world", "color": null, "fontStyle": null }
+      ]
+    },
+    {
+      "name": "inline tag with separator and nested text",
+      "input": "$$link(https://a.com|click me)$$",
+      "expected": [
+        { "content": "$$", "color": "#CF222E", "fontStyle": "bold" },
+        { "content": "link", "color": "#0550AE", "fontStyle": "bold" },
+        { "content": "(", "color": "#6639BA", "fontStyle": null },
+        { "content": "https://a.com", "color": "#0A3069", "fontStyle": null },
+        { "content": "|", "color": "#953800", "fontStyle": "bold" },
+        { "content": "click me", "color": "#0A3069", "fontStyle": null },
+        { "content": ")", "color": "#6639BA", "fontStyle": null },
+        { "content": "$$", "color": "#CF222E", "fontStyle": "bold" }
+      ]
+    },
+    {
+      "name": "raw tag with escaped close marker",
+      "input": "$$code(ts)%\nconst value = \"a\\%end$$\";\n%end$$",
+      "expected": [
+        { "content": "$$", "color": "#CF222E", "fontStyle": "bold" },
+        { "content": "code", "color": "#0550AE", "fontStyle": "bold" },
+        { "content": "(", "color": "#6639BA", "fontStyle": null },
+        { "content": "ts", "color": "#0A3069", "fontStyle": null },
+        { "content": ")", "color": "#6639BA", "fontStyle": null },
+        { "content": "%", "color": "#1A7F37", "fontStyle": "bold" },
+        { "content": "\nconst value = \"a", "color": "#0A7EA4", "fontStyle": null },
+        { "content": "\\%end$$", "color": "#116329", "fontStyle": null },
+        { "content": "\";\n", "color": "#0A7EA4", "fontStyle": null },
+        { "content": "%", "color": "#1A7F37", "fontStyle": "bold" },
+        { "content": "end", "color": "#8250DF", "fontStyle": "bold" },
+        { "content": "$$", "color": "#CF222E", "fontStyle": "bold" }
+      ]
+    },
+    {
+      "name": "custom colors through createTokenizer defaults and overrides",
+      "input": "$$bold(ok)$$",
+      "options": {
+        "colors": {
+          "tagName": "#111111",
+          "separator": "#222222"
+        },
+        "depthLimit": 7
+      },
+      "overrideOptions": {
+        "colors": {
+          "separator": "#333333",
+          "bracket": "#444444"
+        }
+      },
+      "expected": [
+        { "content": "$$", "color": "#CF222E", "fontStyle": "bold" },
+        { "content": "bold", "color": "#111111", "fontStyle": "bold" },
+        { "content": "(", "color": "#444444", "fontStyle": null },
+        { "content": "ok", "color": "#0A3069", "fontStyle": null },
+        { "content": ")", "color": "#444444", "fontStyle": null },
+        { "content": "$$", "color": "#CF222E", "fontStyle": "bold" }
+      ]
+    }
+  ],
+  "lineCases": [
+    {
+      "name": "raw block splits into visual lines",
+      "input": "$$code(ts)%\nconst x = 1;\n%end$$",
+      "expected": [
+        [
+          { "content": "$$", "color": "#CF222E", "fontStyle": "bold" },
+          { "content": "code", "color": "#0550AE", "fontStyle": "bold" },
+          { "content": "(", "color": "#6639BA", "fontStyle": null },
+          { "content": "ts", "color": "#0A3069", "fontStyle": null },
+          { "content": ")", "color": "#6639BA", "fontStyle": null },
+          { "content": "%", "color": "#1A7F37", "fontStyle": "bold" }
+        ],
+        [
+          { "content": "const x = 1;", "color": "#0A7EA4", "fontStyle": null }
+        ],
+        [
+          { "content": "%", "color": "#1A7F37", "fontStyle": "bold" },
+          { "content": "end", "color": "#8250DF", "fontStyle": "bold" },
+          { "content": "$$", "color": "#CF222E", "fontStyle": "bold" }
+        ]
+      ]
+    }
+  ]
+}

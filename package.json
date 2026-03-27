@@ -1,7 +1,7 @@
 {
   "name": "yume-dsl-shiki-highlight",
   "version": "0.1.0",
-  "description": "Minimal Shiki-compatible syntax highlight library for yume-dsl rich-text",
+  "description": "Minimal Shiki syntax-highlighting support for yume-dsl-rich-text",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -33,11 +33,19 @@
   },
   "keywords": [
     "yume-dsl",
+    "yume-dsl-rich-text",
     "dsl",
-    "shiki",
-    "syntax-highlight",
     "rich-text",
-    "textmate-grammar"
+    "shiki",
+    "syntax-highlighting",
+    "syntax-highlight",
+    "highlight",
+    "textmate",
+    "textmate-grammar",
+    "grammar",
+    "tokenizer",
+    "markup",
+    "custom-markup"
   ],
   "author": "Hoshino Yumeka",
   "license": "MIT",
@@ -53,7 +61,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "yume-dsl-rich-text": "^0.1.18"
+    "yume-dsl-rich-text": "^0.1.20"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
