@@ -11,7 +11,7 @@ const {
   createRichTextGrammar,
   escapeRegex,
 } = mod;
-const { createSyntax, withSyntax, createSimpleInlineHandlers, createSimpleRawHandlers } = richText;
+const { createSimpleInlineHandlers, createSimpleRawHandlers } = richText;
 
 const normalize = (tokens) =>
   tokens.map((token) => ({
@@ -59,56 +59,67 @@ assert.deepEqual(
 );
 console.log("PASS createTokenizer defaults/overrides");
 
-// ── withSyntax closure inheritance ──
+// ── explicit syntax option should not require withSyntax ambient context ──
 
-withSyntax(createSyntax(syntax), () => {
-  assert.deepEqual(normalize(tokenizeRichText("@@link<<a || b>>@@")), [
-    { content: "@@", color: "#CF222E", fontStyle: "bold" },
-    { content: "link", color: "#0550AE", fontStyle: "bold" },
-    { content: "<<", color: "#6639BA", fontStyle: undefined },
-    { content: "a ", color: "#0A3069", fontStyle: undefined },
-    { content: "||", color: "#953800", fontStyle: "bold" },
-    { content: " b", color: "#0A3069", fontStyle: undefined },
-    { content: ">>", color: "#6639BA", fontStyle: undefined },
-    { content: "@@", color: "#CF222E", fontStyle: "bold" },
-  ]);
-
-  const source = "@@code<<ts>>%\nconst x = 1;\n%fin@@";
-  const lineTokens = tokenizeRichTextLines(source);
-  assert.equal(lineTokens.length, 3);
-  assert.equal(
-    lineTokens.map((line) => joinTokenText(line)).join("\n"),
-    joinTokenText(tokenizeRichText(source)),
-  );
-
-  // rawEndWord derived from custom rawClose "%fin@@" → "fin"
-  const flat = tokenizeRichText(source);
-  const rawEndToken = flat.find((t) => t.content === "fin");
-  assert.ok(rawEndToken, "rawEndWord should be 'fin' from custom rawClose");
-  assert.equal(rawEndToken.color, "#8250DF");
-
-  // blockEndWord derived from custom blockClose "*stop@@" → "stop" (different from raw)
-  const blockSyntax = {
-    ...syntax,
-    rawClose: "%done@@",
-    blockClose: "*stop@@",
-  };
-  withSyntax(createSyntax(blockSyntax), () => {
-    const blockSource = "@@info<<title>>*\ncontent\n*stop@@";
-    const blockFlat = tokenizeRichText(blockSource);
-    const blockEndToken = blockFlat.find((t) => t.content === "stop");
-    assert.ok(blockEndToken, "blockEndWord should be 'stop' from custom blockClose");
-    assert.equal(blockEndToken.color, "#8250DF");
-
-    // raw uses "done", not "stop"
-    const rawSource2 = "@@code<<ts>>%\ncode\n%done@@";
-    const rawFlat2 = tokenizeRichText(rawSource2);
-    const rawEndToken2 = rawFlat2.find((t) => t.content === "done");
-    assert.ok(rawEndToken2, "rawEndWord should be 'done', independent from blockEndWord");
+{
+  const explicitSyntaxTokens = tokenizeRichText("@@code<<ts>>%\na ~%fin@@ b\n%fin@@", {
+    syntax,
   });
-});
+  assert.equal(joinTokenText(explicitSyntaxTokens), "@@code<<ts>>%\na ~%fin@@ b\n%fin@@");
+  const rawEnd = explicitSyntaxTokens.find((t) => t.content === "fin");
+  assert.ok(rawEnd, "explicit syntax path should derive raw end word");
+  assert.equal(rawEnd.fontStyle, "bold");
+  const operatorTokens = explicitSyntaxTokens.filter((t) => t.content === "%");
+  assert.equal(operatorTokens.length, 2, "explicit syntax path should emit both raw operators");
+}
+console.log("PASS explicit syntax option without withSyntax");
 
-console.log("PASS withSyntax closure inheritance + independent raw/block endWord");
+// ── explicit syntax drives tokenization and end-word derivation ──
+
+assert.deepEqual(normalize(tokenizeRichText("@@link<<a || b>>@@", { syntax })), [
+  { content: "@@", color: "#CF222E", fontStyle: "bold" },
+  { content: "link", color: "#0550AE", fontStyle: "bold" },
+  { content: "<<", color: "#6639BA", fontStyle: undefined },
+  { content: "a ", color: "#0A3069", fontStyle: undefined },
+  { content: "||", color: "#953800", fontStyle: "bold" },
+  { content: " b", color: "#0A3069", fontStyle: undefined },
+  { content: ">>", color: "#6639BA", fontStyle: undefined },
+  { content: "@@", color: "#CF222E", fontStyle: "bold" },
+]);
+
+const source = "@@code<<ts>>%\nconst x = 1;\n%fin@@";
+const lineTokens = tokenizeRichTextLines(source, { syntax });
+assert.equal(lineTokens.length, 3);
+assert.equal(
+  lineTokens.map((line) => joinTokenText(line)).join("\n"),
+  joinTokenText(tokenizeRichText(source, { syntax })),
+);
+
+// rawEndWord derived from custom rawClose "%fin@@" → "fin"
+const flat = tokenizeRichText(source, { syntax });
+const rawEndToken = flat.find((t) => t.content === "fin");
+assert.ok(rawEndToken, "rawEndWord should be 'fin' from custom rawClose");
+assert.equal(rawEndToken.color, "#8250DF");
+
+// blockEndWord derived from custom blockClose "*stop@@" → "stop" (different from raw)
+const blockSyntax = {
+  ...syntax,
+  rawClose: "%done@@",
+  blockClose: "*stop@@",
+};
+const blockSource = "@@info<<title>>*\ncontent\n*stop@@";
+const blockFlat = tokenizeRichText(blockSource, { syntax: blockSyntax });
+const blockEndToken = blockFlat.find((t) => t.content === "stop");
+assert.ok(blockEndToken, "blockEndWord should be 'stop' from custom blockClose");
+assert.equal(blockEndToken.color, "#8250DF");
+
+// raw uses "done", not "stop"
+const rawSource2 = "@@code<<ts>>%\ncode\n%done@@";
+const rawFlat2 = tokenizeRichText(rawSource2, { syntax: blockSyntax });
+const rawEndToken2 = rawFlat2.find((t) => t.content === "done");
+assert.ok(rawEndToken2, "rawEndWord should be 'done', independent from blockEndWord");
+
+console.log("PASS explicit syntax + independent raw/block endWord");
 
 // ── tokenizeRichTextLines consistency ──
 

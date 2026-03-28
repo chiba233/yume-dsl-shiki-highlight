@@ -125,6 +125,22 @@ const tokens = tokenizeRichText("$$bold(hello)$$ world");
 const lines = tokenizeRichTextLines("$$code(ts)%\nconst x = 1;\n%end$$");
 ```
 
+如果使用自定义语法，推荐先用 `yume-dsl-rich-text` 的 `createEasySyntax(...)` 生成，再显式传入 `options.syntax`：
+
+```ts
+import {createEasySyntax} from "yume-dsl-rich-text";
+
+const syntax = createEasySyntax({
+  tagPrefix: "@@",
+  tagOpen: "<<",
+  tagClose: ">>",
+  tagDivider: "||",
+  escapeChar: "~",
+});
+
+const tokens = tokenizeRichText("@@bold<<hello>>@@", {syntax});
+```
+
 或先绑定默认选项：
 
 ```ts
@@ -224,17 +240,19 @@ interface TokenizeOptions extends ParserBaseOptions {
 }
 ```
 
-### `renderStructuralTree(nodes, colors, textColor?)`
+### `renderStructuralTree(nodes, colors, textColor?, syntax?)`
 
 底层渲染器：将 `StructuralNode[]`（来自 `parseStructural`）转为 `HighlightToken[]`。
 
 适合在结构解析和颜色渲染之间插入你自己的逻辑。
+如果这棵树来自自定义语法的 `parseStructural`，这里也应传入同一份 `syntax`。
 
 ```ts
 function renderStructuralTree(
-    nodes: StructuralNode[],
-    colors: HighlightColors,
-    textColor?: string,
+  nodes: StructuralNode[],
+  colors: HighlightColors,
+  textColor?: string,
+  syntax?: Partial<SyntaxInput>,
 ): HighlightToken[]
 ```
 
@@ -417,24 +435,7 @@ interface GrammarTagConfig {
 
 ## 更新日志
 
-### 1.0.0
-
-- 稳定版发布 — API 已定型
-- 将 `yume-dsl-rich-text` 依赖升级至 `^1.0.1`
-- 将 `typescript` 开发依赖从 `^5.7.0` 升级至 `^6.0.2`
-
-### 0.1.0
-
-- 首次发布
-- `createTokenizerFromParser` — 从 parser 配置创建 tokenizer（推荐入口）
-- `createTokenizer` — 独立 tokenizer，绑定默认选项
-- `TokenizeOptions extends ParserBaseOptions` — `handlers`/`allowForms`/`syntax`/`tagName` 透传给 `parseStructural`
-- 无状态函数：`tokenizeRichText`、`tokenizeRichTextLines`
-- Shiki TextMate 语法工厂：`createRichTextGrammar`，支持 `tagName` 校验和 `anyTagPattern` 覆盖
-- 预置主题 token 配色：`RICH_TEXT_TOKEN_COLORS`
-- 可配置 9 色方案：`DEFAULT_COLORS` / `resolveColors`
-- 底层渲染器：`renderStructuralTree`
-- 工具函数：`escapeRegex`、`colorizeEscapes`、`splitTokensByLineBreak`、`pushToken`
+另见 [更新日志](./CHANGELOG.zh-CN.md)。
 
 ---
 

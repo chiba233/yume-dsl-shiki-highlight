@@ -1,5 +1,5 @@
-import type { StructuralNode, SyntaxInput } from "yume-dsl-rich-text";
-import { getSyntax, readEscapedSequence } from "yume-dsl-rich-text";
+import type { StructuralNode, SyntaxConfig, SyntaxInput } from "yume-dsl-rich-text";
+import { createSyntax, readEscapedSequence } from "yume-dsl-rich-text";
 import type { HighlightColors, HighlightToken, TokenizeOptions, Tokenizer } from "./types.js";
 import { resolveColors } from "./colors.js";
 import { parseStructural } from "yume-dsl-rich-text";
@@ -52,6 +52,7 @@ export const colorizeEscapes = (
   text: string,
   valueColor: string | undefined,
   escapeColor: string,
+  syntax?: SyntaxConfig,
 ): HighlightToken[] => {
   const tokens: HighlightToken[] = [];
   let i = 0;
@@ -64,7 +65,7 @@ export const colorizeEscapes = (
   };
 
   while (i < text.length) {
-    const [escaped, next] = readEscapedSequence(text, i);
+    const [escaped, next] = readEscapedSequence(text, i, syntax ? { syntax } : undefined);
     if (escaped === null) {
       buffer += text[i];
       i++;
@@ -109,6 +110,7 @@ const renderNodes = (
   nodes: StructuralNode[],
   colors: HighlightColors,
   s: RenderSyntax,
+  syntax: SyntaxConfig,
   textColor?: string,
 ): HighlightToken[] => {
   const tokens: HighlightToken[] = [];
@@ -135,19 +137,19 @@ const renderNodes = (
     pushToken(tokens, s.tagOpen, colors.bracket);
 
     if (node.type === "inline") {
-      renderNodes(node.children, colors, s, colors.argText).forEach((t) => tokens.push(t));
+      renderNodes(node.children, colors, s, syntax, colors.argText).forEach((t) => tokens.push(t));
       pushToken(tokens, s.tagClose, colors.bracket);
       pushToken(tokens, s.tagPrefix, colors.punct, "bold");
       continue;
     }
 
     // Raw / Block share arg section
-    renderNodes(node.args, colors, s, colors.argText).forEach((t) => tokens.push(t));
+    renderNodes(node.args, colors, s, syntax, colors.argText).forEach((t) => tokens.push(t));
     pushToken(tokens, s.tagClose, colors.bracket);
 
     if (node.type === "raw") {
       pushToken(tokens, s.rawMarker, colors.operator, "bold");
-      colorizeEscapes(node.content, colors.contentText, colors.escape).forEach((t) =>
+      colorizeEscapes(node.content, colors.contentText, colors.escape, syntax).forEach((t) =>
         tokens.push(t),
       );
       pushToken(tokens, s.rawMarker, colors.operator, "bold");
@@ -158,7 +160,7 @@ const renderNodes = (
 
     // Block
     pushToken(tokens, s.blockMarker, colors.operator, "bold");
-    renderNodes(node.children, colors, s, colors.contentText).forEach((t) => tokens.push(t));
+    renderNodes(node.children, colors, s, syntax, colors.contentText).forEach((t) => tokens.push(t));
     pushToken(tokens, s.blockMarker, colors.operator, "bold");
     pushToken(tokens, s.blockEndWord, colors.end, "bold");
     pushToken(tokens, s.tagPrefix, colors.punct, "bold");
@@ -170,14 +172,16 @@ const renderNodes = (
 /**
  * Render a structural tree into colored highlight tokens.
  *
- * Reads syntax tokens once from the active `withSyntax` context (or default).
+ * Reads syntax tokens once from the provided `syntax` override or `DEFAULT_SYNTAX`.
  */
 export const renderStructuralTree = (
   nodes: StructuralNode[],
   colors: HighlightColors,
   textColor?: string,
+  syntax?: Partial<SyntaxInput>,
 ): HighlightToken[] => {
-  return renderNodes(nodes, colors, buildRenderSyntax(getSyntax()), textColor);
+  const resolvedSyntax = createSyntax(syntax);
+  return renderNodes(nodes, colors, buildRenderSyntax(resolvedSyntax), resolvedSyntax, textColor);
 };
 
 // ── Public API ──
@@ -196,6 +200,7 @@ const mergeTokenizeOptions = (
 
 const renderTokens = (text: string, options?: TokenizeOptions): HighlightToken[] => {
   const colors = resolveColors(options?.colors);
+  const syntax = options?.syntax ? createSyntax(options.syntax) : undefined;
   const tree = parseStructural(text, {
     handlers: options?.handlers,
     allowForms: options?.allowForms,
@@ -203,7 +208,7 @@ const renderTokens = (text: string, options?: TokenizeOptions): HighlightToken[]
     syntax: options?.syntax,
     tagName: options?.tagName,
   });
-  return renderStructuralTree(tree, colors);
+  return renderStructuralTree(tree, colors, undefined, syntax);
 };
 
 /**

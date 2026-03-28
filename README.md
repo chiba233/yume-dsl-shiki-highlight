@@ -128,6 +128,23 @@ const tokens = tokenizeRichText("$$bold(hello)$$ world");
 const lines = tokenizeRichTextLines("$$code(ts)%\nconst x = 1;\n%end$$");
 ```
 
+When using custom syntax, prefer `createEasySyntax(...)` from `yume-dsl-rich-text` and pass the result explicitly in
+`options.syntax`:
+
+```ts
+import { createEasySyntax } from "yume-dsl-rich-text";
+
+const syntax = createEasySyntax({
+  tagPrefix: "@@",
+  tagOpen: "<<",
+  tagClose: ">>",
+  tagDivider: "||",
+  escapeChar: "~",
+});
+
+const tokens = tokenizeRichText("@@bold<<hello>>@@", { syntax });
+```
+
 Or bind defaults once:
 
 ```ts
@@ -227,17 +244,19 @@ interface TokenizeOptions extends ParserBaseOptions {
 }
 ```
 
-### `renderStructuralTree(nodes, colors, textColor?)`
+### `renderStructuralTree(nodes, colors, textColor?, syntax?)`
 
 Low-level renderer: converts a `StructuralNode[]` tree (from `parseStructural`) into colored tokens.
 
 Use this when you want to insert your own logic between structural parsing and rendering.
+If your tree was parsed with custom syntax, pass the same `syntax` override here as well.
 
 ```ts
 function renderStructuralTree(
-    nodes: StructuralNode[],
-    colors: HighlightColors,
-    textColor?: string,
+  nodes: StructuralNode[],
+  colors: HighlightColors,
+  textColor?: string,
+  syntax?: Partial<SyntaxInput>,
 ): HighlightToken[]
 ```
 
@@ -423,24 +442,8 @@ Differences from `parseRichText` (features, not bugs):
 
 ## Changelog
 
-### 1.0.0
+See also [CHANGELOG](./CHANGELOG.md).
 
-- Stable release — API is finalized
-- Updated `yume-dsl-rich-text` dependency to `^1.0.1`
-- Updated `typescript` dev dependency from `^5.7.0` to `^6.0.2`
-
-### 0.1.0
-
-- Initial release
-- `createTokenizerFromParser` — create tokenizer from parser config (recommended entry point)
-- `createTokenizer` — standalone tokenizer with bound defaults
-- `TokenizeOptions extends ParserBaseOptions` — `handlers`/`allowForms`/`syntax`/`tagName` transparently forwarded to `parseStructural`
-- Stateless functions: `tokenizeRichText`, `tokenizeRichTextLines`
-- Shiki TextMate grammar factory: `createRichTextGrammar` with `tagName` validation and `anyTagPattern` override
-- Pre-built theme token colors: `RICH_TEXT_TOKEN_COLORS`
-- Configurable 9-color palette with `DEFAULT_COLORS` / `resolveColors`
-- Low-level renderer: `renderStructuralTree`
-- Utilities: `escapeRegex`, `colorizeEscapes`, `splitTokensByLineBreak`, `pushToken`
 
 ---
 
