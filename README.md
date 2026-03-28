@@ -4,7 +4,7 @@
 
 ### [▶ Live Demo — DSL Fallback Museum](https://qwwq.org/blog/dsl-fallback-museum)
 
-Shiki code-highlighting plugin · legitimate plugins · intentional malformed markup · error reporting
+Shiki code-highlighting plugin
 
 ---
 

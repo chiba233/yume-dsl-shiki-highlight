@@ -4,7 +4,7 @@
 
 ### [▶ 在线演示 — DSL Fallback Museum](https://qwwq.org/blog/dsl-fallback-museum)
 
-Shiki 代码高亮插件 · 合法插件用法 · 各种故意书写错误 · 错误报告
+Shiki 代码高亮插件
 
 ---
 
