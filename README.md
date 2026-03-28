@@ -20,6 +20,9 @@ Shiki code-highlighting plugin · legitimate plugins · intentional malformed ma
 A small syntax-highlighting library for
 [`yume-dsl-rich-text`](https://github.com/chiba233/yumeDSL).
 
+**Core API is stable.** Future updates will prioritize backward compatibility; breaking changes, if any, will land in
+major versions with explicit migration notes.
+
 Two modes:
 
 - **Programmatic** — `tokenizeRichText` returns colored token arrays you can render anywhere (terminal, canvas, custom
@@ -419,6 +422,12 @@ Differences from `parseRichText` (features, not bugs):
 ---
 
 ## Changelog
+
+### 1.0.0
+
+- Stable release — API is finalized
+- Updated `yume-dsl-rich-text` dependency to `^1.0.1`
+- Updated `typescript` dev dependency from `^5.7.0` to `^6.0.2`
 
 ### 0.1.0
 

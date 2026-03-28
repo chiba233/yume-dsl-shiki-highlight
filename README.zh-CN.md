@@ -19,6 +19,8 @@ Shiki 代码高亮插件 · 合法插件用法 · 各种故意书写错误 · �
 
 [`yume-dsl-rich-text`](https://github.com/chiba233/yumeDSL) 的轻量语法高亮库。
 
+**核心 API 已稳定。** 后续更新以向后兼容为优先；如有破坏性变更，将在主版本号升级时附带明确的迁移说明。
+
 两种模式：
 
 - **编程式** — `tokenizeRichText` 返回带颜色的 token 数组，可渲染到任何目标（终端、canvas、自定义 UI）。
@@ -414,6 +416,12 @@ interface GrammarTagConfig {
 ---
 
 ## 更新日志
+
+### 1.0.0
+
+- 稳定版发布 — API 已定型
+- 将 `yume-dsl-rich-text` 依赖升级至 `^1.0.1`
+- 将 `typescript` 开发依赖从 `^5.7.0` 升级至 `^6.0.2`
 
 ### 0.1.0
 
