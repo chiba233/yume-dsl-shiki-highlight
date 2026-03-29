@@ -27,7 +27,7 @@
   "type": "module",
   "sideEffects": false,
   "scripts": {
-    "build": "tsup",
+    "build": "tsup --target esnext",
     "lint": "tsc --noEmit",
     "test": "npm run build && node tests/run-tests.mjs"
   },
