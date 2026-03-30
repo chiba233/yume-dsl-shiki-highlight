@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -13,11 +14,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"],
-    "paths": {
-      "yume-dsl-rich-text": ["../yume-dsl-rich-text/src/index.ts"],
-      "yume-dsl-shiki-highlight": ["./src/index.ts"]
-    }
+    "types": ["node"]
   },
   "include": ["src"]
 }
