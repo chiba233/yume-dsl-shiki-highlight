@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       yume-dsl-rich-text:
-        specifier: ^1.0.9
-        version: 1.0.9
+        specifier: ^1.0.10
+        version: 1.0.10
     devDependencies:
       '@types/node':
         specifier: ^25.5.0
@@ -540,8 +540,8 @@ packages:
   undici-types@7.18.2:
     resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
 
-  yume-dsl-rich-text@1.0.9:
-    resolution: {integrity: sha512-w6+eUXcdCiMXg86QmGO6KZC+738Rnj3nO9a9FEcrQ/32HIPsPMvN4SUaE1QWQNlfLzifSqE2paeV/L4O5XDeug==}
+  yume-dsl-rich-text@1.0.10:
+    resolution: {integrity: sha512-4Vp2ig/RMGcbrGm2MZ8LY7SPu7ScW6beKbdnVWvtvLx2N2prkGvCAPNa3A0iwEvoBarTAB+XzudDVjdOzMCQow==}
     engines: {node: '>=18'}
 
 snapshots:
@@ -932,4 +932,4 @@ snapshots:
 
   undici-types@7.18.2: {}
 
-  yume-dsl-rich-text@1.0.9: {}
+  yume-dsl-rich-text@1.0.10: {}
