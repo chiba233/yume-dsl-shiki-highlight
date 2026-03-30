@@ -74,6 +74,7 @@ text ──▶ yume-dsl-rich-text (parse) ──▶ TextToken[]  ──▶ yume-
 | [`yume-dsl-rich-text`](https://github.com/chiba233/yumeDSL)                  | 解析器 — 文本到 token 树                 |
 | [`yume-dsl-token-walker`](https://github.com/chiba233/yume-dsl-token-walker) | 解释器 — token 树到输出节点                |
 | **`yume-dsl-shiki-highlight`**                                               | 语法高亮 — 彩色 token 或 TextMate 语法（本包） |
+| [`yume-dsl-markdown-it`](https://github.com/chiba233/yume-dsl-markdown-it)  | markdown-it 插件 — Markdown 中渲染 DSL 标签 |
 
 ---
 

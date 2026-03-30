@@ -77,6 +77,7 @@ text ──▶ yume-dsl-rich-text (parse) ──▶ TextToken[]  ──▶ yume-
 | [`yume-dsl-rich-text`](https://github.com/chiba233/yumeDSL)                        | Parser — text to token tree                                     |
 | [`yume-dsl-token-walker`](https://github.com/chiba233/yume-dsl-token-walker)       | Interpreter — token tree to output nodes                        |
 | **`yume-dsl-shiki-highlight`**                                                     | Syntax highlighting — tokens or TextMate grammar (this package) |
+| [`yume-dsl-markdown-it`](https://github.com/chiba233/yume-dsl-markdown-it)         | markdown-it plugin — DSL tags inside Markdown                   |
 
 ---
 

@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.0.2
+
+- Update markdown
+
 ### 1.0.1
 
 - `tokenizeRichText` / `tokenizeRichTextLines` now carry explicit `options.syntax` through the full render pipeline

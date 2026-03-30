@@ -1,5 +1,9 @@
 # 更新日志
 
+### 1.0.2
+
+- 更新文档
+
 ### 1.0.1
 
 - `tokenizeRichText` / `tokenizeRichTextLines` 现在会将显式传入的 `options.syntax` 贯穿到完整渲染链路
