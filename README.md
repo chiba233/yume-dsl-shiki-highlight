@@ -46,14 +46,14 @@ Two modes:
     - [createTokenizerFromParser](#createtokenizerfromparserparseroptions-colors)
     - [createTokenizer](#createtokenizerdefaults)
     - [tokenizeRichText / tokenizeRichTextLines](#tokenizerichtexttext-options)
-    - [renderStructuralTree](#renderstructuraltreenodes-colors-textcolor)
+    - [renderStructuralTree](#renderstructuraltreenodes-colors-syntax-textcolor)
 - [API — Shiki Grammar](#api--shiki-grammar)
     - [createRichTextGrammar](#createrichtextgrammartagconfig)
     - [RICH_TEXT_TOKEN_COLORS](#rich_text_token_colors)
     - [RICH_TEXT_SCOPE_NAME](#rich_text_scope_name)
 - [API — Utilities](#api--utilities)
     - [escapeRegex](#escaperegexvalue)
-    - [colorizeEscapes](#colorizeescapestext-valuecolor-escapecolor)
+    - [colorizeEscapes](#colorizeescapestext-valuecolor-escapecolor-syntax)
     - [splitTokensByLineBreak](#splittokensbylinebreaktokens)
     - [pushToken](#pushtokentokens-content-color-fontstyle)
 - [Colors](#colors)
@@ -259,19 +259,19 @@ interface TokenizeOptions extends ParserBaseOptions {
 }
 ```
 
-### `renderStructuralTree(nodes, colors, textColor?, syntax?)`
+### `renderStructuralTree(nodes, colors, syntax, textColor?)`
 
 Low-level renderer: converts a `StructuralNode[]` tree (from `parseStructural`) into colored tokens.
 
 Use this when you want to insert your own logic between structural parsing and rendering.
-If your tree was parsed with custom syntax, pass the same `syntax` override here as well.
+Pass the same `syntax` you used for parsing. Use `createSyntax()` for default syntax.
 
 ```ts
 function renderStructuralTree(
   nodes: StructuralNode[],
   colors: HighlightColors,
+  syntax: SyntaxConfig,
   textColor?: string,
-  syntax?: Partial<SyntaxInput>,
 ): HighlightToken[]
 ```
 
@@ -351,13 +351,13 @@ escapeRegex("*end$$");   // "\\*end\\$\\$"
 escapeRegex("ns.tag");   // "ns\\.tag"    — dot escaped (not wildcard)
 ```
 
-### `colorizeEscapes(text, valueColor, escapeColor)`
+### `colorizeEscapes(text, valueColor, escapeColor, syntax)`
 
 Scan a string for DSL escape sequences (`\(`, `\)`, `\|`, etc.), returning tokens
 where escapes are colored separately.
 
 ```ts
-function colorizeEscapes(text: string, valueColor: string | undefined, escapeColor: string): HighlightToken[]
+function colorizeEscapes(text: string, valueColor: string | undefined, escapeColor: string, syntax: SyntaxConfig): HighlightToken[]
 ```
 
 ### `splitTokensByLineBreak(tokens)`

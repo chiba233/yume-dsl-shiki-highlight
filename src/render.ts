@@ -52,7 +52,7 @@ export const colorizeEscapes = (
   text: string,
   valueColor: string | undefined,
   escapeColor: string,
-  syntax?: SyntaxConfig,
+  syntax: SyntaxConfig,
 ): HighlightToken[] => {
   const tokens: HighlightToken[] = [];
   let i = 0;
@@ -65,7 +65,7 @@ export const colorizeEscapes = (
   };
 
   while (i < text.length) {
-    const [escaped, next] = readEscapedSequence(text, i, syntax ? { syntax } : undefined);
+    const [escaped, next] = readEscapedSequence(text, i, { syntax });
     if (escaped === null) {
       buffer += text[i];
       i++;
@@ -172,16 +172,16 @@ const renderNodes = (
 /**
  * Render a structural tree into colored highlight tokens.
  *
- * Reads syntax tokens once from the provided `syntax` override or `DEFAULT_SYNTAX`.
+ * Reads syntax tokens once from the provided `syntax`.
+ * Pass `createSyntax()` for default syntax.
  */
 export const renderStructuralTree = (
   nodes: StructuralNode[],
   colors: HighlightColors,
+  syntax: SyntaxConfig,
   textColor?: string,
-  syntax?: Partial<SyntaxInput>,
 ): HighlightToken[] => {
-  const resolvedSyntax = createSyntax(syntax);
-  return renderNodes(nodes, colors, buildRenderSyntax(resolvedSyntax), resolvedSyntax, textColor);
+  return renderNodes(nodes, colors, buildRenderSyntax(syntax), syntax, textColor);
 };
 
 // ── Public API ──
@@ -200,7 +200,7 @@ const mergeTokenizeOptions = (
 
 const renderTokens = (text: string, options?: TokenizeOptions): HighlightToken[] => {
   const colors = resolveColors(options?.colors);
-  const syntax = options?.syntax ? createSyntax(options.syntax) : undefined;
+  const syntax = createSyntax(options?.syntax);
   const tree = parseStructural(text, {
     handlers: options?.handlers,
     allowForms: options?.allowForms,
@@ -208,7 +208,7 @@ const renderTokens = (text: string, options?: TokenizeOptions): HighlightToken[]
     syntax: options?.syntax,
     tagName: options?.tagName,
   });
-  return renderStructuralTree(tree, colors, undefined, syntax);
+  return renderStructuralTree(tree, colors, syntax);
 };
 
 /**

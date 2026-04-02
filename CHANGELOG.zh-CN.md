@@ -1,7 +1,14 @@
 # 更新日志
 
-### 1.0.4
+### 2.0.0
 
+- **破坏性变更：** `colorizeEscapes(text, valueColor, escapeColor, syntax)` 的 `syntax` 参数
+  现在是**必填**（`SyntaxConfig`）。之前为可选，省略时会回退到已弃用的 ambient `getSyntax()` 状态。
+  需要默认语法时传 `createSyntax()` 即可
+- **破坏性变更：** `renderStructuralTree(nodes, colors, syntax, textColor?)` 的 `syntax` 现在
+  是**必填**（`SyntaxConfig`），且移到第 3 个参数（在 `textColor` 之前）。
+  之前 `syntax` 是第 4 个可选参数（`Partial<SyntaxInput>`）。
+  需要默认语法时传 `createSyntax()` 即可
 - 新增：`GrammarTagConfig.tagName` —— 为 grammar 校验覆盖标签名字符规则。标签名在生成 regex
   之前会按规则逐字符校验；无效名称直接抛出描述性错误，不再产出坏掉的 grammar
 - 新增：`GrammarTagConfig.anyTagPattern` —— 在未提供特定标签列表时覆盖匹配任意标签名的回退 regex。

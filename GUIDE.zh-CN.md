@@ -43,14 +43,14 @@ Shiki 代码高亮插件
     - [createTokenizerFromParser](#createtokenizerfromparserparseroptions-colors)
     - [createTokenizer](#createtokenizerdefaults)
     - [tokenizeRichText / tokenizeRichTextLines](#tokenizerichtexttext-options)
-    - [renderStructuralTree](#renderstructuraltreenodes-colors-textcolor)
+    - [renderStructuralTree](#renderstructuraltreenodes-colors-syntax-textcolor)
 - [API — Shiki 语法](#api--shiki-语法)
     - [createRichTextGrammar](#createrichtextgrammartagconfig)
     - [RICH_TEXT_TOKEN_COLORS](#rich_text_token_colors)
     - [RICH_TEXT_SCOPE_NAME](#rich_text_scope_name)
 - [API — 工具函数](#api--工具函数)
     - [escapeRegex](#escaperegexvalue)
-    - [colorizeEscapes](#colorizeescapestext-valuecolor-escapecolor)
+    - [colorizeEscapes](#colorizeescapestext-valuecolor-escapecolor-syntax)
     - [splitTokensByLineBreak](#splittokensbylinebreaktokens)
     - [pushToken](#pushtokentokens-content-color-fontstyle)
 - [配色](#配色)
@@ -255,19 +255,19 @@ interface TokenizeOptions extends ParserBaseOptions {
 }
 ```
 
-### `renderStructuralTree(nodes, colors, textColor?, syntax?)`
+### `renderStructuralTree(nodes, colors, syntax, textColor?)`
 
 底层渲染器：将 `StructuralNode[]`（来自 `parseStructural`）转为 `HighlightToken[]`。
 
 适合在结构解析和颜色渲染之间插入你自己的逻辑。
-如果这棵树来自自定义语法的 `parseStructural`，这里也应传入同一份 `syntax`。
+传入与解析时相同的 `syntax`。需要默认语法时传 `createSyntax()` 即可。
 
 ```ts
 function renderStructuralTree(
     nodes: StructuralNode[],
     colors: HighlightColors,
+    syntax: SyntaxConfig,
     textColor?: string,
-    syntax?: Partial<SyntaxInput>,
 ): HighlightToken[]
 ```
 
@@ -346,12 +346,12 @@ escapeRegex("*end$$");   // "\\*end\\$\\$"
 escapeRegex("ns.tag");   // "ns\\.tag"    — 点号被转义（不是通配符）
 ```
 
-### `colorizeEscapes(text, valueColor, escapeColor)`
+### `colorizeEscapes(text, valueColor, escapeColor, syntax)`
 
 扫描 DSL 转义序列（`\(`、`\)`、`\|` 等），将转义部分和普通文本分别着色。
 
 ```ts
-function colorizeEscapes(text: string, valueColor: string | undefined, escapeColor: string): HighlightToken[]
+function colorizeEscapes(text: string, valueColor: string | undefined, escapeColor: string, syntax: SyntaxConfig): HighlightToken[]
 ```
 
 ### `splitTokensByLineBreak(tokens)`

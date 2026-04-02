@@ -1,7 +1,14 @@
 # Changelog
 
-### 1.0.4
+### 2.0.0
 
+- **Breaking:** `colorizeEscapes(text, valueColor, escapeColor, syntax)` — the `syntax` parameter
+  is now **required** (`SyntaxConfig`). Previously it was optional and fell back to the deprecated
+  ambient `getSyntax()` state when omitted. Pass `createSyntax()` for default syntax
+- **Breaking:** `renderStructuralTree(nodes, colors, syntax, textColor?)` — `syntax` is now
+  **required** (`SyntaxConfig`) and moved to the 3rd parameter (before `textColor`).
+  Previously `syntax` was the 4th optional parameter (`Partial<SyntaxInput>`).
+  Pass `createSyntax()` for default syntax
 - New: `GrammarTagConfig.tagName` — override tag-name character rules for grammar
   validation. Tag names are validated against the provided rules before being used in
   the regex; invalid names throw a descriptive error instead of producing a broken grammar
