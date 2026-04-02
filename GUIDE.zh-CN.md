@@ -200,6 +200,8 @@ const html = highlighter.codeToHtml(dslSource, {
 });
 ```
 
+备注：`createRichTextGrammar({syntax})` 自 `v1.0.3` 起可用。
+
 ---
 
 ## API — 分词器
@@ -279,7 +281,7 @@ function renderStructuralTree(
 
 - **不传 `tagConfig`**：匹配所有合法标签名
 - **传 `tagConfig`**：只匹配列出的标签名
-- 当 parser 使用自定义分隔符时，请传入 `tagConfig.syntax`，让 grammar 与运行时解析保持一致
+- `tagConfig.syntax` 可让 grammar 跟随 parser 的自定义分隔符（自 `v1.0.3` 起可用）
 
 ```ts
 function createRichTextGrammar(tagConfig?: GrammarTagConfig): LanguageRegistration

@@ -205,6 +205,8 @@ const html = highlighter.codeToHtml(dslSource, {
 });
 ```
 
+Note: `createRichTextGrammar({ syntax })` is available since `v1.0.3`.
+
 ---
 
 ## API — Tokenizer
@@ -284,7 +286,7 @@ The returned object can be passed directly to Shiki's `langs` array.
 
 - **No `tagConfig`**: match any valid tag name
 - **With `tagConfig`**: restrict matching to listed tag names
-- Pass `tagConfig.syntax` when your parser uses custom delimiters so the grammar stays aligned with runtime parsing
+- `tagConfig.syntax` lets the grammar follow custom parser delimiters (available since `v1.0.3`)
 
 ```ts
 function createRichTextGrammar(tagConfig?: GrammarTagConfig): LanguageRegistration

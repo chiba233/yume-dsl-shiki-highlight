@@ -1,5 +1,18 @@
 # Changelog
 
+### 1.0.4
+
+- New: `GrammarTagConfig.tagName` — override tag-name character rules for grammar
+  validation. Tag names are validated against the provided rules before being used in
+  the regex; invalid names throw a descriptive error instead of producing a broken grammar
+- New: `GrammarTagConfig.anyTagPattern` — override the fallback regex for matching any
+  tag name when specific tag lists are not provided. Keeps the grammar's "match-all"
+  fallback in sync with custom `tagName` rules (default: `[a-zA-Z_][a-zA-Z0-9_-]*`)
+- New: `toSafeTagPattern` internal validator — checks every tag name character against
+  `TagNameConfig` rules and escapes regex metacharacters via `escapeRegex`
+- Improve: all user-provided tag names are now regex-escaped before being used in the
+  grammar, preventing broken patterns when tag names contain `.`, `*`, or other metacharacters
+
 ### 1.0.3
 
 - `createRichTextGrammar(...)` now accepts `tagConfig.syntax`

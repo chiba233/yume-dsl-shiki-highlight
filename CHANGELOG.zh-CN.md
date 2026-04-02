@@ -1,5 +1,15 @@
 # 更新日志
 
+### 1.0.4
+
+- 新增：`GrammarTagConfig.tagName` —— 为 grammar 校验覆盖标签名字符规则。标签名在生成 regex
+  之前会按规则逐字符校验；无效名称直接抛出描述性错误，不再产出坏掉的 grammar
+- 新增：`GrammarTagConfig.anyTagPattern` —— 在未提供特定标签列表时覆盖匹配任意标签名的回退 regex。
+  保持 grammar 的"全匹配"兜底与自定义 `tagName` 规则同步（默认 `[a-zA-Z_][a-zA-Z0-9_-]*`）
+- 新增：内部 `toSafeTagPattern` 校验器 —— 逐字符检查标签名是否符合 `TagNameConfig` 规则，
+  并通过 `escapeRegex` 转义 regex 元字符
+- 优化：所有用户提供的标签名在用于 grammar 前均做 regex 转义，防止 `.`、`*` 等元字符破坏生成的正则
+
 ### 1.0.3
 
 - `createRichTextGrammar(...)` 现在支持 `tagConfig.syntax`
