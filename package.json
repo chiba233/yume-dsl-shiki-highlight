@@ -1,6 +1,6 @@
 {
   "name": "yume-dsl-shiki-highlight",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "Minimal Shiki syntax-highlighting support for yume-dsl-rich-text",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
