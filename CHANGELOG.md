@@ -1,5 +1,11 @@
 # Changelog
 
+### 1.0.3
+
+- `createRichTextGrammar(...)` now accepts `tagConfig.syntax`
+- Shiki / TextMate grammar generation now follows custom parser delimiters instead of assuming the default `$$` / `()` / `%end$$` / `*end$$` syntax
+- Added smoke coverage and README examples for custom-syntax grammar generation
+
 ### 1.0.2
 
 - Update markdown

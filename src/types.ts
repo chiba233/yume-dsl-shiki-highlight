@@ -2,8 +2,9 @@ export type {
   StructuralNode,
   StructuralParseOptions,
   ParserBaseOptions,
+  SyntaxInput,
 } from "yume-dsl-rich-text";
-import type { ParserBaseOptions } from "yume-dsl-rich-text";
+import type { ParserBaseOptions, SyntaxInput } from "yume-dsl-rich-text";
 
 /** A single colored token in a highlighted line. */
 export interface HighlightToken {
@@ -67,6 +68,12 @@ export interface GrammarTagConfig {
    * Defaults to `DEFAULT_TAG_NAME` from `yume-dsl-rich-text`.
    */
   tagName?: Partial<import("yume-dsl-rich-text").TagNameConfig>;
+  /**
+   * Override the DSL syntax tokens used by the generated grammar.
+   * Pass the same syntax you use in `createParser(...)` so editor highlighting
+   * stays aligned with runtime parsing.
+   */
+  syntax?: Partial<SyntaxInput>;
   /**
    * Override the regex pattern used to match **any** tag name when
    * the corresponding tag list is not provided.

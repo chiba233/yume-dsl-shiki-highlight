@@ -1,5 +1,5 @@
-import type { TagNameConfig } from "yume-dsl-rich-text";
-import { createTagNameConfig, DEFAULT_TAG_NAME } from "yume-dsl-rich-text";
+import type { SyntaxConfig, TagNameConfig } from "yume-dsl-rich-text";
+import { createSyntax, createTagNameConfig, DEFAULT_TAG_NAME } from "yume-dsl-rich-text";
 import type { GrammarTagConfig } from "./types.js";
 import { DEFAULT_COLORS } from "./colors.js";
 
@@ -38,6 +38,72 @@ const createCaptureMap = (
 
 const SCOPE = "yume-rich-text-dsl";
 
+const splitOpenToken = (
+  composite: string,
+  leading: string,
+): { leading: string; trailing: string } =>
+  composite.startsWith(leading)
+    ? { leading, trailing: composite.slice(leading.length) }
+    : { leading: composite, trailing: "" };
+
+const splitCloseToken = (
+  composite: string,
+  operator: string,
+  suffix: string,
+): { operator: string; middle: string; suffix: string } => {
+  if (composite.startsWith(operator) && composite.endsWith(suffix)) {
+    return {
+      operator,
+      middle: composite.slice(operator.length, composite.length - suffix.length),
+      suffix,
+    };
+  }
+
+  if (composite.endsWith(suffix)) {
+    return {
+      operator: composite.slice(0, composite.length - suffix.length),
+      middle: "",
+      suffix,
+    };
+  }
+
+  return { operator: composite, middle: "", suffix: "" };
+};
+
+const createDelimitedCaptures = (
+  firstIndex: number,
+  firstScope: string,
+  second: string,
+  secondScope: string,
+): Record<number, { name: string }> =>
+  second
+    ? createCaptureMap([firstIndex, firstScope], [firstIndex + 1, secondScope])
+    : createCaptureMap([firstIndex, firstScope]);
+
+const createCloseCaptures = (
+  close: { operator: string; middle: string; suffix: string },
+  operatorScope: string,
+): Record<number, { name: string }> => {
+  const entries: Array<[number, string]> = [[1, operatorScope]];
+  let index = 2;
+
+  if (close.middle) {
+    entries.push([index, `keyword.control.flow.end.${SCOPE}`]);
+    index++;
+  }
+  if (close.suffix) {
+    entries.push([index, `punctuation.definition.tag.end.${SCOPE}`]);
+  }
+
+  return createCaptureMap(...entries);
+};
+
+const buildArgsPattern = (syntax: SyntaxConfig): string => {
+  const escapeChar = escapeRegex(syntax.escapeChar);
+  const tagClose = escapeRegex(syntax.tagClose);
+  return `((?:(?:${escapeChar}[\\s\\S])|(?!${tagClose})[\\s\\S])*)`;
+};
+
 /**
  * Create a Shiki-compatible TextMate grammar for the rich-text DSL.
  *
@@ -45,6 +111,7 @@ const SCOPE = "yume-rich-text-dsl";
  * @returns A `LanguageRegistration`-shaped object (compatible with `shiki/types`).
  */
 export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
+  const syntax = createSyntax(tagConfig?.syntax);
   const tagNameConfig = tagConfig?.tagName
     ? createTagNameConfig(tagConfig.tagName)
     : DEFAULT_TAG_NAME;
@@ -52,6 +119,13 @@ export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
   const allPattern = tagConfig ? tagAlternation(tagConfig.allTags, tagNameConfig) : anyPattern;
   const rawPattern = tagConfig ? tagAlternation(tagConfig.rawTags, tagNameConfig) : anyPattern;
   const blockPattern = tagConfig ? tagAlternation(tagConfig.blockTags, tagNameConfig) : anyPattern;
+  const escapePattern = syntax.escapableTokens.map((token) => escapeRegex(token)).join("|");
+  const argsPattern = buildArgsPattern(syntax);
+  const rawOpen = splitOpenToken(syntax.rawOpen, syntax.tagClose);
+  const blockOpen = splitOpenToken(syntax.blockOpen, syntax.tagClose);
+  const endTag = splitOpenToken(syntax.endTag, syntax.tagClose);
+  const rawClose = splitCloseToken(syntax.rawClose, rawOpen.trailing || syntax.rawOpen, syntax.tagPrefix);
+  const blockClose = splitCloseToken(syntax.blockClose, blockOpen.trailing || syntax.blockOpen, syntax.tagPrefix);
 
   return {
     name: "yume-rich-text-dsl",
@@ -66,24 +140,28 @@ export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
     ],
     repository: {
       "escape-sequence": {
-        match: "\\\\(?:\\\\|\\(|\\)|\\||\\$\\$|\\*end\\$\\$|%end\\$\\$)",
+        match: `${escapeRegex(syntax.escapeChar)}(?:${escapePattern})`,
         name: `constant.character.escape.${SCOPE}`,
       },
       "pipe-divider": {
-        match: "\\|",
+        match: escapeRegex(syntax.tagDivider),
         name: `punctuation.separator.arguments.${SCOPE}`,
       },
       "inline-tag": {
-        begin: `(\\$\\$)(${allPattern})(\\()`,
+        begin: `(${escapeRegex(syntax.tagPrefix)})(${allPattern})(${escapeRegex(syntax.tagOpen)})`,
         beginCaptures: createCaptureMap(
           [1, `punctuation.definition.tag.begin.${SCOPE}`],
           [2, `entity.name.tag.${SCOPE}`],
           [3, `punctuation.section.arguments.begin.${SCOPE}`],
         ),
-        end: "(\\))(\\$\\$)",
-        endCaptures: createCaptureMap(
-          [1, `punctuation.section.arguments.end.${SCOPE}`],
-          [2, `punctuation.definition.tag.end.${SCOPE}`],
+        end: endTag.trailing
+          ? `(${escapeRegex(endTag.leading)})(${escapeRegex(endTag.trailing)})`
+          : `(${escapeRegex(endTag.leading)})`,
+        endCaptures: createDelimitedCaptures(
+          1,
+          `punctuation.section.arguments.end.${SCOPE}`,
+          endTag.trailing,
+          `punctuation.definition.tag.end.${SCOPE}`,
         ),
         patterns: [
           { include: "#escape-sequence" },
@@ -93,9 +171,9 @@ export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
         ],
       },
       "paren-group": {
-        begin: "(\\()",
+        begin: `(${escapeRegex(syntax.tagOpen)})`,
         beginCaptures: createCaptureMap([1, `punctuation.section.group.begin.${SCOPE}`]),
-        end: "(\\))",
+        end: `(${escapeRegex(syntax.tagClose)})`,
         endCaptures: createCaptureMap([1, `punctuation.section.group.end.${SCOPE}`]),
         patterns: [
           { include: "#escape-sequence" },
@@ -105,20 +183,20 @@ export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
         ],
       },
       "raw-tag": {
-        begin: `(\\$\\$)(${rawPattern})(\\()((?:\\\\.|[^\\\\)])*)(\\))(%)\\n?`,
+        begin: `(${escapeRegex(syntax.tagPrefix)})(${rawPattern})(${escapeRegex(syntax.tagOpen)})${argsPattern}(${escapeRegex(rawOpen.leading)})${rawOpen.trailing ? `(${escapeRegex(rawOpen.trailing)})` : ""}\\n?`,
         beginCaptures: createCaptureMap(
           [1, `punctuation.definition.tag.begin.${SCOPE}`],
           [2, `entity.name.tag.raw.${SCOPE}`],
           [3, `punctuation.section.arguments.begin.${SCOPE}`],
           [5, `punctuation.section.arguments.end.${SCOPE}`],
-          [6, `keyword.operator.raw.open.${SCOPE}`],
+          ...(rawOpen.trailing
+            ? [[6, `keyword.operator.raw.open.${SCOPE}`] as [number, string]]
+            : []),
         ),
-        end: "^(%)(end)(\\$\\$)$",
-        endCaptures: createCaptureMap(
-          [1, `keyword.operator.raw.close.${SCOPE}`],
-          [2, `keyword.control.flow.end.${SCOPE}`],
-          [3, `punctuation.definition.tag.end.${SCOPE}`],
-        ),
+        end: rawClose.suffix
+          ? `^(${escapeRegex(rawClose.operator)})${rawClose.middle ? `(${escapeRegex(rawClose.middle)})` : ""}(${escapeRegex(rawClose.suffix)})$`
+          : `^(${escapeRegex(rawClose.operator)})${rawClose.middle ? `(${escapeRegex(rawClose.middle)})` : ""}$`,
+        endCaptures: createCloseCaptures(rawClose, `keyword.operator.raw.close.${SCOPE}`),
         patterns: [
           { include: "#escape-sequence" },
           { include: "#inline-tag" },
@@ -128,20 +206,20 @@ export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
         ],
       },
       "block-tag": {
-        begin: `(\\$\\$)(${blockPattern})(\\()((?:\\\\.|[^\\\\)])*)(\\))(\\*)\\n?`,
+        begin: `(${escapeRegex(syntax.tagPrefix)})(${blockPattern})(${escapeRegex(syntax.tagOpen)})${argsPattern}(${escapeRegex(blockOpen.leading)})${blockOpen.trailing ? `(${escapeRegex(blockOpen.trailing)})` : ""}\\n?`,
         beginCaptures: createCaptureMap(
           [1, `punctuation.definition.tag.begin.${SCOPE}`],
           [2, `entity.name.tag.block.${SCOPE}`],
           [3, `punctuation.section.arguments.begin.${SCOPE}`],
           [5, `punctuation.section.arguments.end.${SCOPE}`],
-          [6, `keyword.operator.block.open.${SCOPE}`],
+          ...(blockOpen.trailing
+            ? [[6, `keyword.operator.block.open.${SCOPE}`] as [number, string]]
+            : []),
         ),
-        end: "^(\\*)(end)(\\$\\$)$",
-        endCaptures: createCaptureMap(
-          [1, `keyword.operator.block.close.${SCOPE}`],
-          [2, `keyword.control.flow.end.${SCOPE}`],
-          [3, `punctuation.definition.tag.end.${SCOPE}`],
-        ),
+        end: blockClose.suffix
+          ? `^(${escapeRegex(blockClose.operator)})${blockClose.middle ? `(${escapeRegex(blockClose.middle)})` : ""}(${escapeRegex(blockClose.suffix)})$`
+          : `^(${escapeRegex(blockClose.operator)})${blockClose.middle ? `(${escapeRegex(blockClose.middle)})` : ""}$`,
+        endCaptures: createCloseCaptures(blockClose, `keyword.operator.block.close.${SCOPE}`),
         patterns: [
           { include: "#escape-sequence" },
           { include: "#inline-tag" },

@@ -1,5 +1,11 @@
 # 更新日志
 
+### 1.0.3
+
+- `createRichTextGrammar(...)` 现在支持 `tagConfig.syntax`
+- Shiki / TextMate grammar 生成现在会跟随 parser 的自定义分隔符，而不再默认假设 `$$` / `()` / `%end$$` / `*end$$`
+- 补充了自定义语法 grammar 生成的 smoke 覆盖和 README 示例
+
 ### 1.0.2
 
 - 更新文档

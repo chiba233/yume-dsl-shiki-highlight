@@ -213,6 +213,27 @@ assert.doesNotThrow(() =>
 }
 console.log("PASS grammar tagName validation + escape");
 
+// ── Grammar: custom syntax is reflected in delimiters ──
+
+{
+  const customSyntaxGrammar = createRichTextGrammar({
+    allTags: ["bold"],
+    rawTags: ["code"],
+    blockTags: ["info"],
+    syntax,
+  });
+  assert.match(customSyntaxGrammar.repository["inline-tag"].begin, /@@/);
+  assert.match(customSyntaxGrammar.repository["inline-tag"].begin, /<</);
+  assert.equal(customSyntaxGrammar.repository["inline-tag"].end, "(>>)(@@)");
+  assert.equal(customSyntaxGrammar.repository["pipe-divider"].match, "\\|\\|");
+  assert.ok(customSyntaxGrammar.repository["escape-sequence"].match.startsWith("~(?:"));
+  assert.ok(customSyntaxGrammar.repository["raw-tag"].begin.includes("(>>)(%)"));
+  assert.equal(customSyntaxGrammar.repository["raw-tag"].end, "^(%)(fin)(@@)$");
+  assert.ok(customSyntaxGrammar.repository["block-tag"].begin.includes("(>>)(\\*)"));
+  assert.equal(customSyntaxGrammar.repository["block-tag"].end, "^(\\*)(fin)(@@)$");
+}
+console.log("PASS grammar custom syntax");
+
 // ── Grammar: anyTagPattern override ──
 
 const customGrammar = createRichTextGrammar({

@@ -2,7 +2,9 @@
 
 # yume-dsl-shiki-highlight
 
-### [▶ 在线演示 — DSL Fallback Museum](https://qwwq.org/blog/dsl-fallback-museum)
+### **[▶ 在线体验——输入 DSL，即时查看 token 树](https://demo.qwwq.org/)**
+
+**实时编辑标签、开关 handler、边打字边看 token 树更新。**
 
 Shiki 代码高亮插件
 
@@ -69,12 +71,12 @@ text ──▶ yume-dsl-rich-text (parse) ──▶ TextToken[]  ──▶ yume-
   └──────────────────┴── yume-dsl-shiki-highlight ┘ ──▶ HighlightToken[] / Shiki 语法
 ```
 
-| 包                                                                            | 角色                                |
-|------------------------------------------------------------------------------|-----------------------------------|
-| [`yume-dsl-rich-text`](https://github.com/chiba233/yumeDSL)                  | 解析器 — 文本到 token 树                 |
-| [`yume-dsl-token-walker`](https://github.com/chiba233/yume-dsl-token-walker) | 解释器 — token 树到输出节点                |
-| **`yume-dsl-shiki-highlight`**                                               | 语法高亮 — 彩色 token 或 TextMate 语法（本包） |
-| [`yume-dsl-markdown-it`](https://github.com/chiba233/yume-dsl-markdown-it)  | markdown-it 插件 — Markdown 中渲染 DSL 标签 |
+| 包                                                                            | 角色                                   |
+|------------------------------------------------------------------------------|--------------------------------------|
+| [`yume-dsl-rich-text`](https://github.com/chiba233/yumeDSL)                  | 解析器 — 文本到 token 树                    |
+| [`yume-dsl-token-walker`](https://github.com/chiba233/yume-dsl-token-walker) | 解释器 — token 树到输出节点                   |
+| **`yume-dsl-shiki-highlight`**                                               | 语法高亮 — 彩色 token 或 TextMate 语法（本包）    |
+| [`yume-dsl-markdown-it`](https://github.com/chiba233/yume-dsl-markdown-it)   | markdown-it 插件 — Markdown 中渲染 DSL 标签 |
 
 ---
 
@@ -101,7 +103,7 @@ import {createParser, createSimpleInlineHandlers} from "yume-dsl-rich-text";
 import {createTokenizerFromParser} from "yume-dsl-shiki-highlight";
 
 const parserOpts = {
-  handlers: createSimpleInlineHandlers(["bold", "code", "link"]),
+    handlers: createSimpleInlineHandlers(["bold", "code", "link"]),
 };
 
 const dsl = createParser(parserOpts);
@@ -132,11 +134,11 @@ const lines = tokenizeRichTextLines("$$code(ts)%\nconst x = 1;\n%end$$");
 import {createEasySyntax} from "yume-dsl-rich-text";
 
 const syntax = createEasySyntax({
-  tagPrefix: "@@",
-  tagOpen: "<<",
-  tagClose: ">>",
-  tagDivider: "||",
-  escapeChar: "~",
+    tagPrefix: "@@",
+    tagOpen: "<<",
+    tagClose: ">>",
+    tagDivider: "||",
+    escapeChar: "~",
 });
 
 const tokens = tokenizeRichText("@@bold<<hello>>@@", {syntax});
@@ -148,9 +150,9 @@ const tokens = tokenizeRichText("@@bold<<hello>>@@", {syntax});
 import {createTokenizer} from "yume-dsl-shiki-highlight";
 
 const hl = createTokenizer({
-  handlers,
-  allowForms: ["inline"],
-  colors: {tagName: "#FF0000"},
+    handlers,
+    allowForms: ["inline"],
+    colors: {tagName: "#FF0000"},
 });
 hl.tokenize(text);
 ```
@@ -161,14 +163,24 @@ hl.tokenize(text);
 import {createHighlighterCore} from "shiki/core";
 import {createOnigurumaEngine} from "shiki/engine/oniguruma";
 import baseTheme from "shiki/themes/github-light-high-contrast.mjs";
+import {createEasySyntax} from "yume-dsl-rich-text";
 import {createRichTextGrammar, RICH_TEXT_TOKEN_COLORS} from "yume-dsl-shiki-highlight";
 
-const grammar = createRichTextGrammar();          // 匹配任意标签
+const syntax = createEasySyntax({
+    tagPrefix: "@@",
+    tagOpen: "<<",
+    tagClose: ">>",
+    tagDivider: "||",
+    escapeChar: "~",
+});
+
+const grammar = createRichTextGrammar({syntax});  // 使用自定义分隔符匹配任意标签
 // 或限定已知标签：
 // const grammar = createRichTextGrammar({
 //   allTags: ["bold", "code", "link", "info"],
 //   rawTags: ["code"],
 //   blockTags: ["info", "collapse"],
+//   syntax,
 // });
 
 const theme = {
@@ -198,15 +210,15 @@ const html = highlighter.codeToHtml(dslSource, {
 
 ```ts
 function createTokenizerFromParser(
-  parserOptions: TokenizeOptions,
-  colors?: Partial<HighlightColors>,
+    parserOptions: TokenizeOptions,
+    colors?: Partial<HighlightColors>,
 ): Tokenizer
 ```
 
 ```ts
 interface Tokenizer {
-  tokenize: (text: string, overrides?: TokenizeOptions) => HighlightToken[];
-  tokenizeLines: (text: string, overrides?: TokenizeOptions) => HighlightToken[][];
+    tokenize: (text: string, overrides?: TokenizeOptions) => HighlightToken[];
+    tokenizeLines: (text: string, overrides?: TokenizeOptions) => HighlightToken[][];
 }
 ```
 
@@ -237,7 +249,7 @@ function tokenizeRichTextLines(text: string, options?: TokenizeOptions): Highlig
 
 ```ts
 interface TokenizeOptions extends ParserBaseOptions {
-  colors?: Partial<HighlightColors>;
+    colors?: Partial<HighlightColors>;
 }
 ```
 
@@ -250,10 +262,10 @@ interface TokenizeOptions extends ParserBaseOptions {
 
 ```ts
 function renderStructuralTree(
-  nodes: StructuralNode[],
-  colors: HighlightColors,
-  textColor?: string,
-  syntax?: Partial<SyntaxInput>,
+    nodes: StructuralNode[],
+    colors: HighlightColors,
+    textColor?: string,
+    syntax?: Partial<SyntaxInput>,
 ): HighlightToken[]
 ```
 
@@ -267,6 +279,7 @@ function renderStructuralTree(
 
 - **不传 `tagConfig`**：匹配所有合法标签名
 - **传 `tagConfig`**：只匹配列出的标签名
+- 当 parser 使用自定义分隔符时，请传入 `tagConfig.syntax`，让 grammar 与运行时解析保持一致
 
 ```ts
 function createRichTextGrammar(tagConfig?: GrammarTagConfig): LanguageRegistration
@@ -274,13 +287,17 @@ function createRichTextGrammar(tagConfig?: GrammarTagConfig): LanguageRegistrati
 
 ```ts
 interface GrammarTagConfig {
-  allTags: readonly string[];       // inline 形态匹配
-  rawTags: readonly string[];       // $$tag(…)% … %end$$
-  blockTags: readonly string[];     // $$tag(…)* … *end$$
-  tagName?: Partial<TagNameConfig>; // 标签名校验规则
-  anyTagPattern?: string;           // 通用匹配时的回退正则
+    allTags: readonly string[];       // inline 形态匹配
+    rawTags: readonly string[];       // $$tag(…)% … %end$$
+    blockTags: readonly string[];     // $$tag(…)* … *end$$
+    syntax?: Partial<SyntaxInput>;    // 可选的自定义语法 token
+    tagName?: Partial<TagNameConfig>; // 标签名校验规则
+    anyTagPattern?: string;           // 通用匹配时的回退正则
 }
 ```
+
+如果省略 `syntax`，grammar 会使用 `yume-dsl-rich-text` 的默认分隔符。
+如果你的 parser 用了 `createEasySyntax(...)` 或手写自定义 token，请把同一份 `syntax` 传进来。
 
 ### `RICH_TEXT_TOKEN_COLORS`
 
@@ -319,7 +336,7 @@ function escapeRegex(value: string): string
 ```
 
 ```ts
-import { escapeRegex } from "yume-dsl-shiki-highlight";
+import {escapeRegex} from "yume-dsl-shiki-highlight";
 
 escapeRegex("hello");    // "hello"       — 无元字符
 escapeRegex("$$");       // "\\$\\$"      — 两个 $ 都被转义

@@ -1,8 +1,10 @@
-**English** | [中文](./README.zh-CN.md)
+**English** | [中文](GUIDE.zh-CN.md)
 
 # yume-dsl-shiki-highlight
 
-### [▶ Live Demo — DSL Fallback Museum](https://qwwq.org/blog/dsl-fallback-museum)
+### **[▶ Try the live playground — type DSL, see tokens instantly](https://demo.qwwq.org/)**
+
+**Edit tags in real time, toggle handlers on/off, watch the token tree update as you type.**
 
 Shiki code-highlighting plugin
 
@@ -166,14 +168,24 @@ hl.tokenize(text);
 import { createHighlighterCore } from "shiki/core";
 import { createOnigurumaEngine } from "shiki/engine/oniguruma";
 import baseTheme from "shiki/themes/github-light-high-contrast.mjs";
+import { createEasySyntax } from "yume-dsl-rich-text";
 import { createRichTextGrammar, RICH_TEXT_TOKEN_COLORS } from "yume-dsl-shiki-highlight";
 
-const grammar = createRichTextGrammar();          // match any tag
+const syntax = createEasySyntax({
+    tagPrefix: "@@",
+    tagOpen: "<<",
+    tagClose: ">>",
+    tagDivider: "||",
+    escapeChar: "~",
+});
+
+const grammar = createRichTextGrammar({syntax});  // match any tag with custom delimiters
 // or restrict to known tags:
 // const grammar = createRichTextGrammar({
 //   allTags: ["bold", "code", "link", "info"],
 //   rawTags: ["code"],
 //   blockTags: ["info", "collapse"],
+//   syntax,
 // });
 
 const theme = {
@@ -272,6 +284,7 @@ The returned object can be passed directly to Shiki's `langs` array.
 
 - **No `tagConfig`**: match any valid tag name
 - **With `tagConfig`**: restrict matching to listed tag names
+- Pass `tagConfig.syntax` when your parser uses custom delimiters so the grammar stays aligned with runtime parsing
 
 ```ts
 function createRichTextGrammar(tagConfig?: GrammarTagConfig): LanguageRegistration
@@ -282,10 +295,14 @@ interface GrammarTagConfig {
   allTags: readonly string[];       // inline matching
   rawTags: readonly string[];       // $$tag(…)% … %end$$
   blockTags: readonly string[];     // $$tag(…)* … *end$$
+  syntax?: Partial<SyntaxInput>;    // optional custom syntax tokens
   tagName?: Partial<TagNameConfig>; // validation rules
   anyTagPattern?: string;           // fallback regex for unrestricted matching
 }
 ```
+
+When `syntax` is omitted, the grammar uses the default `yume-dsl-rich-text` delimiters.
+If your parser uses `createEasySyntax(...)` or explicit custom tokens, pass the same syntax here.
 
 ### `RICH_TEXT_TOKEN_COLORS`
 
