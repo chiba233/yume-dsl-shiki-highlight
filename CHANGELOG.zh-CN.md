@@ -1,5 +1,11 @@
 # 更新日志
 
+### 2.0.1
+
+- 修复：深层嵌套高亮爆栈——`renderStructuralTree` 在病理级 inline 深嵌套
+  （例如 5000 层）下不再崩溃。结构树渲染从直接递归改为显式栈迭代，
+  高亮生成现在与 `yume-dsl-rich-text` 的 structural parser 一样，仅受堆内存限制
+
 ### 2.0.0
 
 - **破坏性变更：** `colorizeEscapes(text, valueColor, escapeColor, syntax)` 的 `syntax` 参数

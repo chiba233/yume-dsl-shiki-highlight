@@ -1,5 +1,12 @@
 # Changelog
 
+### 2.0.1
+
+- Fix: deep nesting highlight stack overflow — `renderStructuralTree` no longer crashes on
+  pathological inline nesting (for example 5000 nested tags). Structural tree rendering was
+  rewritten from direct recursion to explicit stack iteration, so highlight generation now
+  follows the same heap-bounded behavior as `yume-dsl-rich-text`'s structural parser
+
 ### 2.0.0
 
 - **Breaking:** `colorizeEscapes(text, valueColor, escapeColor, syntax)` — the `syntax` parameter

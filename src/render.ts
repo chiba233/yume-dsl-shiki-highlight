@@ -105,7 +105,17 @@ export const splitTokensByLineBreak = (tokens: HighlightToken[]): HighlightToken
 
 // ── Tree renderer ──
 
-/** Internal recursive renderer — syntax tokens are precomputed once at the entry point. */
+type DeferredFrame =
+  | { kind: "inline-close" }
+  | { kind: "raw-after-args"; node: Extract<StructuralNode, { type: "raw" }> }
+  | { kind: "block-after-args"; node: Extract<StructuralNode, { type: "block" }> }
+  | { kind: "block-close" };
+
+type RenderFrame =
+  | { kind: "node"; node: StructuralNode; textColor?: string }
+  | { kind: "deferred"; deferred: DeferredFrame; textColor?: string };
+
+/** Internal iterative renderer — syntax tokens are precomputed once at the entry point. */
 const renderNodes = (
   nodes: StructuralNode[],
   colors: HighlightColors,
@@ -114,10 +124,60 @@ const renderNodes = (
   textColor?: string,
 ): HighlightToken[] => {
   const tokens: HighlightToken[] = [];
+  const stack: RenderFrame[] = [];
 
-  for (const node of nodes) {
+  const pushNodes = (items: StructuralNode[], nextTextColor?: string) => {
+    for (let i = items.length - 1; i >= 0; i--) {
+      stack.push({ kind: "node", node: items[i], textColor: nextTextColor });
+    }
+  };
+
+  pushNodes(nodes, textColor);
+
+  while (stack.length > 0) {
+    const frame = stack.pop();
+    if (!frame) break;
+
+    if (frame.kind === "deferred") {
+      switch (frame.deferred.kind) {
+        case "inline-close":
+          pushToken(tokens, s.tagClose, colors.bracket);
+          pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+          break;
+        case "raw-after-args":
+          pushToken(tokens, s.tagClose, colors.bracket);
+          pushToken(tokens, s.rawMarker, colors.operator, "bold");
+          for (const token of colorizeEscapes(
+            frame.deferred.node.content,
+            colors.contentText,
+            colors.escape,
+            syntax,
+          )) {
+            tokens.push(token);
+          }
+          pushToken(tokens, s.rawMarker, colors.operator, "bold");
+          pushToken(tokens, s.rawEndWord, colors.end, "bold");
+          pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+          break;
+        case "block-after-args":
+          pushToken(tokens, s.tagClose, colors.bracket);
+          pushToken(tokens, s.blockMarker, colors.operator, "bold");
+          stack.push({ kind: "deferred", deferred: { kind: "block-close" } });
+          pushNodes(frame.deferred.node.children, colors.contentText);
+          break;
+        case "block-close":
+          pushToken(tokens, s.blockMarker, colors.operator, "bold");
+          pushToken(tokens, s.blockEndWord, colors.end, "bold");
+          pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+          break;
+      }
+      continue;
+    }
+
+    const { node } = frame;
+
     if (node.type === "text") {
-      pushToken(tokens, node.value, textColor);
+      pushToken(tokens, node.value, frame.textColor);
       continue;
     }
 
@@ -131,39 +191,24 @@ const renderNodes = (
       continue;
     }
 
-    // Common tag head: $$tagName(
     pushToken(tokens, s.tagPrefix, colors.punct, "bold");
     pushToken(tokens, node.tag, colors.tagName, "bold");
     pushToken(tokens, s.tagOpen, colors.bracket);
 
     if (node.type === "inline") {
-      renderNodes(node.children, colors, s, syntax, colors.argText).forEach((t) => tokens.push(t));
-      pushToken(tokens, s.tagClose, colors.bracket);
-      pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+      stack.push({ kind: "deferred", deferred: { kind: "inline-close" } });
+      pushNodes(node.children, colors.argText);
       continue;
     }
-
-    // Raw / Block share arg section
-    renderNodes(node.args, colors, s, syntax, colors.argText).forEach((t) => tokens.push(t));
-    pushToken(tokens, s.tagClose, colors.bracket);
 
     if (node.type === "raw") {
-      pushToken(tokens, s.rawMarker, colors.operator, "bold");
-      colorizeEscapes(node.content, colors.contentText, colors.escape, syntax).forEach((t) =>
-        tokens.push(t),
-      );
-      pushToken(tokens, s.rawMarker, colors.operator, "bold");
-      pushToken(tokens, s.rawEndWord, colors.end, "bold");
-      pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+      stack.push({ kind: "deferred", deferred: { kind: "raw-after-args", node } });
+      pushNodes(node.args, colors.argText);
       continue;
     }
 
-    // Block
-    pushToken(tokens, s.blockMarker, colors.operator, "bold");
-    renderNodes(node.children, colors, s, syntax, colors.contentText).forEach((t) => tokens.push(t));
-    pushToken(tokens, s.blockMarker, colors.operator, "bold");
-    pushToken(tokens, s.blockEndWord, colors.end, "bold");
-    pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+    stack.push({ kind: "deferred", deferred: { kind: "block-after-args", node } });
+    pushNodes(node.args, colors.argText);
   }
 
   return tokens;
