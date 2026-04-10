@@ -438,8 +438,9 @@ interface GrammarTagConfig {
 
 ## 与 `parseStructural` 的关系
 
-`TokenizeOptions` 继承 `ParserBaseOptions`，所以 `handlers`、`allowForms`、`syntax`、
-`tagName`、`depthLimit` 会直接透传给 `parseStructural`，不需要额外适配层。
+`TokenizeOptions` 继承 `ParserBaseOptions`，所以 `handlers`、`allowForms`、
+`implicitInlineShorthand`、`syntax`、`tagName`、`depthLimit` 会直接透传给
+`parseStructural`，不需要额外适配层。
 
 传入 `handlers` 时，标签识别和形态门控与 `parseRichText` 完全一致。省略时，所有标签和所有形态均被接受。
 

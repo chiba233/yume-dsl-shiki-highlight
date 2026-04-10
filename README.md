@@ -444,8 +444,9 @@ are re-exported from `yume-dsl-rich-text`.
 
 ## Relationship with `parseStructural`
 
-`TokenizeOptions` extends `ParserBaseOptions`, so `handlers`, `allowForms`, `syntax`,
-`tagName`, and `depthLimit` flow through to `parseStructural` without extra adapter code.
+`TokenizeOptions` extends `ParserBaseOptions`, so `handlers`, `allowForms`,
+`implicitInlineShorthand`, `syntax`, `tagName`, and `depthLimit` flow through
+to `parseStructural` without extra adapter code.
 
 When `handlers` is provided, tag recognition and form gating are identical to `parseRichText`.
 When omitted, all tags and forms are accepted.
