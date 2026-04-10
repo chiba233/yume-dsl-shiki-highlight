@@ -7,4 +7,5 @@ export default defineConfig({
   clean: true,
   sourcemap: false,
   splitting: false,
+  external: ["yume-dsl-rich-text"],
 });
