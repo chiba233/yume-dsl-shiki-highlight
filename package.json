@@ -28,7 +28,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsup --target esnext",
-    "lint": "tsc --noEmit",
+    "lint": "tsc --noEmit -p tsconfig.json",
     "test": "npm run build && node tests/run-tests.mjs"
   },
   "keywords": [
@@ -61,7 +61,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "yume-dsl-rich-text": "^1.2.0"
+    "yume-dsl-rich-text": "^1.2.7"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
