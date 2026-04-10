@@ -225,7 +225,10 @@ interface Tokenizer {
 ```
 
 `parserOptions` 可包含与 `parseStructural` 相同的结构化选项：
-`handlers`、`allowForms`、`depthLimit`、`syntax`、`tagName`。
+`handlers`、`allowForms`、`implicitInlineShorthand`、`depthLimit`、`syntax`、`tagName`。
+
+若启用了 implicit inline shorthand（inline 参数里的 `name(...)`），请在高亮侧传入
+与 parser 相同的 `implicitInlineShorthand`，保证解析与高亮结果一致。
 
 第二个参数 `colors` 会叠加到这些 parser 派生默认值之上。
 
@@ -241,7 +244,8 @@ function createTokenizer(defaults?: TokenizeOptions): Tokenizer
 ### `tokenizeRichText(text, options?)` / `tokenizeRichTextLines(text, options?)`
 
 无状态一次性函数。
-`TokenizeOptions` 继承 `ParserBaseOptions`，可直接传 parser 的门控选项。
+`TokenizeOptions` 继承 `ParserBaseOptions`，可直接传 parser 的门控选项
+（包括 `implicitInlineShorthand`）。
 
 ```ts
 function tokenizeRichText(text: string, options?: TokenizeOptions): HighlightToken[]

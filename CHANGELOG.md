@@ -1,5 +1,17 @@
 # Changelog
 
+### 2.1.0
+
+- New: `TokenizeOptions.implicitInlineShorthand` — forward the `implicitInlineShorthand`
+  option to the underlying structural parser so that `name(...)` shorthand inside inline
+  args is correctly parsed and highlighted. Accepts `boolean | readonly string[]`,
+  matching the parser's three-tier opt-in
+- Improve: `renderTokens` now conditionally passes `implicitInlineShorthand` to
+  `parseStructural`, keeping the highlight pipeline in sync with parser behavior
+- Docs: README and GUIDE updated to list `implicitInlineShorthand` among
+  `parserOptions` / `TokenizeOptions` fields
+- Dep: `yume-dsl-rich-text` peer range bumped to `^1.3.0`
+
 ### 2.0.1
 
 - Fix: deep nesting highlight stack overflow — `renderStructuralTree` no longer crashes on

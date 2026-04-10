@@ -230,7 +230,10 @@ interface Tokenizer {
 ```
 
 `parserOptions` can include the same structural settings used by `parseStructural`:
-`handlers`, `allowForms`, `depthLimit`, `syntax`, and `tagName`.
+`handlers`, `allowForms`, `implicitInlineShorthand`, `depthLimit`, `syntax`, and `tagName`.
+
+For consistent parser/highlight behavior with implicit inline shorthand (`name(...)` inside
+inline args), pass the same `implicitInlineShorthand` value you use in your parser config.
 
 The optional `colors` argument is applied on top of those parser-derived defaults.
 
@@ -246,7 +249,8 @@ function createTokenizer(defaults?: TokenizeOptions): Tokenizer
 ### `tokenizeRichText(text, options?)` / `tokenizeRichTextLines(text, options?)`
 
 Stateless one-shot functions.
-`TokenizeOptions` extends `ParserBaseOptions`, so you can pass parser gating options directly.
+`TokenizeOptions` extends `ParserBaseOptions`, so you can pass parser gating options directly
+(including `implicitInlineShorthand`).
 
 ```ts
 function tokenizeRichText(text: string, options?: TokenizeOptions): HighlightToken[]

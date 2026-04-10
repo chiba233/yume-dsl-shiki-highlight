@@ -1,5 +1,16 @@
 # 更新日志
 
+### 2.1.0
+
+- 新增：`TokenizeOptions.implicitInlineShorthand` —— 将 `implicitInlineShorthand`
+  选项转发给底层 structural parser，使 inline 参数内的 `name(...)` 简写语法能被
+  正确解析和高亮。接受 `boolean | readonly string[]`，与 parser 的三级开关一致
+- 优化：`renderTokens` 现在有条件地将 `implicitInlineShorthand` 传递给
+  `parseStructural`，保证高亮流水线与 parser 行为同步
+- 文档：README 和 GUIDE 已更新，在 `parserOptions` / `TokenizeOptions`
+  字段列表中加入 `implicitInlineShorthand`
+- 依赖：`yume-dsl-rich-text` 版本范围提升至 `^1.3.0`
+
 ### 2.0.1
 
 - 修复：深层嵌套高亮爆栈——`renderStructuralTree` 在病理级 inline 深嵌套

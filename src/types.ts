@@ -45,6 +45,13 @@ export interface HighlightColors {
 export interface TokenizeOptions extends ParserBaseOptions {
   /** Override default colors. */
   colors?: Partial<HighlightColors>;
+  /**
+   * Forward-compatible shorthand toggle for inline-arg context (`name(...)`).
+   *
+   * Kept locally to support newer parser options even when the installed
+   * `yume-dsl-rich-text` type version lags behind at compile time.
+   */
+  implicitInlineShorthand?: boolean | readonly string[];
 }
 
 /** Reusable tokenizer instance with bound default options. */

@@ -246,13 +246,17 @@ const mergeTokenizeOptions = (
 const renderTokens = (text: string, options?: TokenizeOptions): HighlightToken[] => {
   const colors = resolveColors(options?.colors);
   const syntax = createSyntax(options?.syntax);
-  const tree = parseStructural(text, {
+  const structuralOptions: Record<string, unknown> = {
     handlers: options?.handlers,
     allowForms: options?.allowForms,
     depthLimit: options?.depthLimit,
     syntax: options?.syntax,
     tagName: options?.tagName,
-  });
+  };
+  if (options?.implicitInlineShorthand !== undefined) {
+    structuralOptions.implicitInlineShorthand = options.implicitInlineShorthand;
+  }
+  const tree = parseStructural(text, structuralOptions);
   return renderStructuralTree(tree, colors, syntax);
 };
 

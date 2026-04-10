@@ -155,6 +155,45 @@ const hasCodeTag = inlineOnlyTokens.some((t) => t.content === "code" && t.fontSt
 assert.ok(!hasCodeTag, "raw form should degrade when allowForms excludes raw");
 console.log("PASS TokenizeOptions forwards allowForms");
 
+// implicitInlineShorthand: true -> inline shorthand should be highlighted as tags
+{
+  const shorthandSource = "$$bold(bold(x))$$";
+  const shorthandHandlers = createSimpleInlineHandlers(["bold"]);
+  const shorthandTokens = tokenizeRichText(shorthandSource, {
+    handlers: shorthandHandlers,
+    implicitInlineShorthand: true,
+  });
+  const shorthandBoldTags = shorthandTokens.filter(
+    (t) => t.content === "bold" && t.fontStyle === "bold" && t.color === "#0550AE",
+  );
+
+  // Compatibility: when upstream parser does not support shorthand yet,
+  // only the outer tag can be recognized.
+  const tree = richText.parseStructural(shorthandSource, {
+    handlers: shorthandHandlers,
+    implicitInlineShorthand: true,
+  });
+  let inlineBoldCount = 0;
+  const stack = [...tree];
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (!node) continue;
+    if (node.type === "inline" && node.tag === "bold") inlineBoldCount++;
+    if (node.type === "inline") {
+      for (let i = node.children.length - 1; i >= 0; i--) stack.push(node.children[i]);
+    } else if (node.type === "raw") {
+      for (let i = node.args.length - 1; i >= 0; i--) stack.push(node.args[i]);
+    } else if (node.type === "block") {
+      for (let i = node.children.length - 1; i >= 0; i--) stack.push(node.children[i]);
+      for (let i = node.args.length - 1; i >= 0; i--) stack.push(node.args[i]);
+    }
+  }
+
+  const expectedTagCount = inlineBoldCount >= 2 ? 2 : 1;
+  assert.equal(shorthandBoldTags.length, expectedTagCount, "implicit shorthand highlight should match parser support");
+}
+console.log("PASS TokenizeOptions forwards implicitInlineShorthand");
+
 // ── createTokenizerFromParser ──
 
 const parserOpts = { handlers, allowForms: ["inline"] };
