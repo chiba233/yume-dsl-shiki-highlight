@@ -14,15 +14,37 @@ interface RenderSyntax {
   blockMarker: string;
   rawEndWord: string;
   blockEndWord: string;
+  rawCloseSuffix: string;
+  blockCloseSuffix: string;
 }
 
-/** Derive the "end word" between a marker and tagPrefix: e.g. "%end$$" → "end" */
-const deriveEndWord = (closeToken: string, marker: string, tagPrefix: string): string =>
-  closeToken.slice(marker.length, closeToken.length - tagPrefix.length);
+/**
+ * Decompose a close token (e.g. rawClose / blockClose) into endWord and suffix.
+ *
+ * The close token is expected to be `marker + endWord + tagPrefix`, but when
+ * the close token does not end with tagPrefix (custom syntax), the suffix is
+ * empty and the entire remainder after the marker becomes the endWord.
+ */
+const decomposeClose = (
+  closeToken: string,
+  marker: string,
+  tagPrefix: string,
+): { endWord: string; suffix: string } => {
+  const afterMarker = closeToken.slice(marker.length);
+  if (afterMarker.length >= tagPrefix.length && afterMarker.endsWith(tagPrefix)) {
+    return {
+      endWord: afterMarker.slice(0, afterMarker.length - tagPrefix.length),
+      suffix: tagPrefix,
+    };
+  }
+  return { endWord: afterMarker, suffix: "" };
+};
 
 const buildRenderSyntax = (s: SyntaxInput): RenderSyntax => {
   const rawMarker = s.rawOpen.slice(s.tagClose.length);
   const blockMarker = s.blockOpen.slice(s.tagClose.length);
+  const rawClose = decomposeClose(s.rawClose, rawMarker, s.tagPrefix);
+  const blockClose = decomposeClose(s.blockClose, blockMarker, s.tagPrefix);
   return {
     tagPrefix: s.tagPrefix,
     tagOpen: s.tagOpen,
@@ -30,8 +52,10 @@ const buildRenderSyntax = (s: SyntaxInput): RenderSyntax => {
     tagDivider: s.tagDivider,
     rawMarker,
     blockMarker,
-    rawEndWord: deriveEndWord(s.rawClose, rawMarker, s.tagPrefix),
-    blockEndWord: deriveEndWord(s.blockClose, blockMarker, s.tagPrefix),
+    rawEndWord: rawClose.endWord,
+    blockEndWord: blockClose.endWord,
+    rawCloseSuffix: rawClose.suffix,
+    blockCloseSuffix: blockClose.suffix,
   };
 };
 
@@ -106,7 +130,7 @@ export const splitTokensByLineBreak = (tokens: HighlightToken[]): HighlightToken
 // ── Tree renderer ──
 
 type DeferredFrame =
-  | { kind: "inline-close" }
+  | { kind: "inline-close"; shorthand?: boolean }
   | { kind: "raw-after-args"; node: Extract<StructuralNode, { type: "raw" }> }
   | { kind: "block-after-args"; node: Extract<StructuralNode, { type: "block" }> }
   | { kind: "block-close" };
@@ -142,7 +166,9 @@ const renderNodes = (
       switch (frame.deferred.kind) {
         case "inline-close":
           pushToken(tokens, s.tagClose, colors.bracket);
-          pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+          if (!frame.deferred.shorthand) {
+            pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+          }
           break;
         case "raw-after-args":
           pushToken(tokens, s.tagClose, colors.bracket);
@@ -157,7 +183,7 @@ const renderNodes = (
           }
           pushToken(tokens, s.rawMarker, colors.operator, "bold");
           pushToken(tokens, s.rawEndWord, colors.end, "bold");
-          pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+          pushToken(tokens, s.rawCloseSuffix, colors.punct, "bold");
           break;
         case "block-after-args":
           pushToken(tokens, s.tagClose, colors.bracket);
@@ -168,7 +194,7 @@ const renderNodes = (
         case "block-close":
           pushToken(tokens, s.blockMarker, colors.operator, "bold");
           pushToken(tokens, s.blockEndWord, colors.end, "bold");
-          pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+          pushToken(tokens, s.blockCloseSuffix, colors.punct, "bold");
           break;
       }
       continue;
@@ -191,12 +217,15 @@ const renderNodes = (
       continue;
     }
 
-    pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+    const shorthand = node.type === "inline" && node.implicitInlineShorthand === true;
+    if (!shorthand) {
+      pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+    }
     pushToken(tokens, node.tag, colors.tagName, "bold");
     pushToken(tokens, s.tagOpen, colors.bracket);
 
     if (node.type === "inline") {
-      stack.push({ kind: "deferred", deferred: { kind: "inline-close" } });
+      stack.push({ kind: "deferred", deferred: { kind: "inline-close", shorthand } });
       pushNodes(node.children, colors.argText);
       continue;
     }

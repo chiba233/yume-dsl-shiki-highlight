@@ -1,5 +1,16 @@
 # Changelog
 
+### 2.1.1
+
+- Fix: highlight token offset drift when custom syntax defines `rawClose` / `blockClose`
+  without a trailing `tagPrefix` (e.g. `rawClose: "%"`, `blockClose: "*"`). The renderer
+  previously hardcoded `tagPrefix` after every raw/block close sequence; it now decomposes
+  the close token and only emits a suffix when the close token actually ends with `tagPrefix`
+- Fix: highlight token offset drift for implicit inline shorthand tags. The renderer
+  previously emitted `tagPrefix` before and after every inline tag, but shorthand tags
+  (`italic<...>` instead of `=italic<...>=`) have no prefix/suffix in source. The renderer
+  now checks `implicitInlineShorthand` and skips `tagPrefix` accordingly
+
 ### 2.1.0
 
 - New: `TokenizeOptions.implicitInlineShorthand` — forward the `implicitInlineShorthand`

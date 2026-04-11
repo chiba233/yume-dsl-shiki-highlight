@@ -1,5 +1,16 @@
 # 更新日志
 
+### 2.1.1
+
+- 修复：当自定义语法的 `rawClose` / `blockClose` 不以 `tagPrefix` 结尾时
+  （如 `rawClose: "%"`、`blockClose: "*"`），高亮 token 偏移量会逐渐漂移。
+  渲染器之前在每个 raw/block 关闭序列后硬编码追加 `tagPrefix`；现在会
+  正确拆解关闭 token，仅在关闭 token 确实以 `tagPrefix` 结尾时才追加后缀
+- 修复：简写 inline 标签（`implicitInlineShorthand`）的高亮 token 偏移量漂移。
+  渲染器之前对每个 inline 标签都输出 `tagPrefix` 前后缀，但简写标签
+  （`italic<...>` 而非 `=italic<...>=`）源码中没有前后缀。渲染器现在会
+  检查 `implicitInlineShorthand` 标志并跳过 `tagPrefix`
+
 ### 2.1.0
 
 - 新增：`TokenizeOptions.implicitInlineShorthand` —— 将 `implicitInlineShorthand`
