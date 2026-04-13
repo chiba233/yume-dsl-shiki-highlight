@@ -71,6 +71,9 @@ console.log("PASS createTokenizer defaults/overrides");
   assert.equal(rawEnd.fontStyle, "bold");
   const operatorTokens = explicitSyntaxTokens.filter((t) => t.content === "%");
   assert.equal(operatorTokens.length, 2, "explicit syntax path should emit both raw operators");
+  const rawEscape = explicitSyntaxTokens.find((t) => t.content === "~%fin@@");
+  assert.ok(rawEscape, "raw escaped close marker should be emitted as a dedicated token");
+  assert.equal(rawEscape.color, "#116329");
 }
 console.log("PASS explicit syntax option without withSyntax");
 
@@ -265,7 +268,7 @@ console.log("PASS grammar tagName validation + escape");
   assert.match(customSyntaxGrammar.repository["inline-tag"].begin, /<</);
   assert.equal(customSyntaxGrammar.repository["inline-tag"].end, "(>>)(@@)");
   assert.equal(customSyntaxGrammar.repository["pipe-divider"].match, "\\|\\|");
-  assert.ok(customSyntaxGrammar.repository["escape-sequence"].match.startsWith("~(?:"));
+  assert.ok(customSyntaxGrammar.repository["args-escape-sequence"].match.startsWith("~(?:"));
   assert.ok(customSyntaxGrammar.repository["raw-tag"].begin.includes("(>>)(%)"));
   assert.equal(customSyntaxGrammar.repository["raw-tag"].end, "^(%)(fin)(@@)$");
   assert.ok(customSyntaxGrammar.repository["block-tag"].begin.includes("(>>)(\\*)"));

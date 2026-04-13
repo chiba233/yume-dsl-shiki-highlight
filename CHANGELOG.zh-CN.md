@@ -1,5 +1,22 @@
 # 更新日志
 
+### 2.1.2
+
+- **Grammar：按上下文拆分 escape 规则**
+  - 原先单一的 `escape-sequence` 规则拆分为：
+    - `args-escape-sequence`
+    - `raw-escape-sequence`
+    - `block-escape-sequence`
+  - inline/括号参数区使用参数区 escape 规则。
+  - raw 正文仅高亮 `escape + rawClose`。
+  - block 正文仅高亮 `escape + blockClose`。
+- **Tokenizer：修复 raw 正文 escape 高亮**
+  - `render.ts` 对 `raw.content` 改为使用 raw 作用域 escape 集合（`[rawClose]`）着色，被转义的 raw 闭合符会输出为 escape 颜色 token。
+- **测试更新**
+  - 新增/更新了被转义 raw 闭合符的 smoke 断言。
+  - grammar 仓库键断言同步更新为新的上下文命名。
+- 无公共 API 变化
+
 ### 2.1.1
 
 - 修复：当自定义语法的 `rawClose` / `blockClose` 不以 `tagPrefix` 结尾时

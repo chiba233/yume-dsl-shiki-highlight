@@ -1,5 +1,22 @@
 # Changelog
 
+### 2.1.2
+
+- **Grammar: split escape matching by context**
+  - Replaced the single `escape-sequence` rule with:
+    - `args-escape-sequence`
+    - `raw-escape-sequence`
+    - `block-escape-sequence`
+  - Inline/paren arguments now use args-only escape rules.
+  - Raw body now highlights only `escape + rawClose`.
+  - Block body now highlights only `escape + blockClose`.
+- **Tokenizer: raw body escape highlighting fixed**
+  - `render.ts` now colorizes `raw.content` with a raw-scoped escape set (`[rawClose]`), so escaped raw close markers are emitted as escape-colored tokens.
+- **Tests updated**
+  - Added/updated smoke assertions for escaped raw close marker output.
+  - Updated grammar repository key assertions to the new context-specific names.
+- No public API changes
+
 ### 2.1.1
 
 - Fix: highlight token offset drift when custom syntax defines `rawClose` / `blockClose`

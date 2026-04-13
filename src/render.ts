@@ -173,11 +173,12 @@ const renderNodes = (
         case "raw-after-args":
           pushToken(tokens, s.tagClose, colors.bracket);
           pushToken(tokens, s.rawMarker, colors.operator, "bold");
+          const rawEscapeSyntax: SyntaxConfig = { ...syntax, escapableTokens: [syntax.rawClose] };
           for (const token of colorizeEscapes(
             frame.deferred.node.content,
             colors.contentText,
             colors.escape,
-            syntax,
+            rawEscapeSyntax,
           )) {
             tokens.push(token);
           }

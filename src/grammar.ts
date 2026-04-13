@@ -119,7 +119,21 @@ export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
   const allPattern = tagConfig ? tagAlternation(tagConfig.allTags, tagNameConfig) : anyPattern;
   const rawPattern = tagConfig ? tagAlternation(tagConfig.rawTags, tagNameConfig) : anyPattern;
   const blockPattern = tagConfig ? tagAlternation(tagConfig.blockTags, tagNameConfig) : anyPattern;
-  const escapePattern = syntax.escapableTokens.map((token) => escapeRegex(token)).join("|");
+  const argsEscapableTokens = syntax.escapableTokens.filter(
+    (token) => token !== syntax.rawClose && token !== syntax.blockClose,
+  );
+  const blockEscapableSet = new Set([
+    syntax.endTag,
+    syntax.tagOpen,
+    syntax.tagClose,
+    syntax.blockClose,
+  ]);
+  const blockEscapableTokens = syntax.escapableTokens.filter((token) => blockEscapableSet.has(token));
+
+  const argsEscapePattern = argsEscapableTokens.map((token) => escapeRegex(token)).join("|");
+  const rawEscapePattern = escapeRegex(syntax.rawClose);
+  const blockEscapePattern = blockEscapableTokens.map((token) => escapeRegex(token)).join("|");
+  const rawContentPattern = `(?:${escapeRegex(syntax.escapeChar)}(?!${rawEscapePattern})|(?:(?!${escapeRegex(syntax.escapeChar)}(?:${rawEscapePattern}))[^\n]))+`;
   const argsPattern = buildArgsPattern(syntax);
   const rawOpen = splitOpenToken(syntax.rawOpen, syntax.tagClose);
   const blockOpen = splitOpenToken(syntax.blockOpen, syntax.tagClose);
@@ -136,11 +150,19 @@ export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
       { include: "#raw-tag" },
       { include: "#block-tag" },
       { include: "#inline-tag" },
-      { include: "#escape-sequence" },
+      { include: "#args-escape-sequence" },
     ],
     repository: {
-      "escape-sequence": {
-        match: `${escapeRegex(syntax.escapeChar)}(?:${escapePattern})`,
+      "args-escape-sequence": {
+        match: `${escapeRegex(syntax.escapeChar)}(?:${argsEscapePattern})`,
+        name: `constant.character.escape.${SCOPE}`,
+      },
+      "raw-escape-sequence": {
+        match: `${escapeRegex(syntax.escapeChar)}(?:${rawEscapePattern})`,
+        name: `constant.character.escape.${SCOPE}`,
+      },
+      "block-escape-sequence": {
+        match: `${escapeRegex(syntax.escapeChar)}(?:${blockEscapePattern})`,
         name: `constant.character.escape.${SCOPE}`,
       },
       "pipe-divider": {
@@ -164,7 +186,7 @@ export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
           `punctuation.definition.tag.end.${SCOPE}`,
         ),
         patterns: [
-          { include: "#escape-sequence" },
+          { include: "#args-escape-sequence" },
           { include: "#inline-tag" },
           { include: "#paren-group" },
           { include: "#pipe-divider" },
@@ -176,7 +198,7 @@ export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
         end: `(${escapeRegex(syntax.tagClose)})`,
         endCaptures: createCaptureMap([1, `punctuation.section.group.end.${SCOPE}`]),
         patterns: [
-          { include: "#escape-sequence" },
+          { include: "#args-escape-sequence" },
           { include: "#inline-tag" },
           { include: "#paren-group" },
           { include: "#pipe-divider" },
@@ -198,11 +220,8 @@ export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
           : `^(${escapeRegex(rawClose.operator)})${rawClose.middle ? `(${escapeRegex(rawClose.middle)})` : ""}$`,
         endCaptures: createCloseCaptures(rawClose, `keyword.operator.raw.close.${SCOPE}`),
         patterns: [
-          { include: "#escape-sequence" },
-          { include: "#inline-tag" },
-          { include: "#paren-group" },
-          { include: "#pipe-divider" },
-          { match: "^.*$", name: `string.unquoted.block.${SCOPE}` },
+          { include: "#raw-escape-sequence" },
+          { match: rawContentPattern, name: `string.unquoted.block.${SCOPE}` },
         ],
       },
       "block-tag": {
@@ -221,7 +240,7 @@ export const createRichTextGrammar = (tagConfig?: GrammarTagConfig) => {
           : `^(${escapeRegex(blockClose.operator)})${blockClose.middle ? `(${escapeRegex(blockClose.middle)})` : ""}$`,
         endCaptures: createCloseCaptures(blockClose, `keyword.operator.block.close.${SCOPE}`),
         patterns: [
-          { include: "#escape-sequence" },
+          { include: "#block-escape-sequence" },
           { include: "#inline-tag" },
           { include: "#paren-group" },
           { include: "#pipe-divider" },
