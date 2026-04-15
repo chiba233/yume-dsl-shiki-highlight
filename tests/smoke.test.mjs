@@ -98,6 +98,32 @@ assert.equal(
   joinTokenText(tokenizeRichText(source, { syntax })),
 );
 
+// inline close should follow syntax.endTag exactly (no inferred +tagPrefix)
+const sameCloseSyntax = {
+  ...syntax,
+  tagPrefix: "=",
+  tagOpen: "<",
+  tagClose: ">",
+  tagDivider: "|",
+  endTag: ">",
+  rawOpen: ">%",
+  blockOpen: ">*",
+  rawClose: "%",
+  blockClose: "*",
+  escapeChar: "~",
+};
+const sameCloseSource = "=bold<ok>";
+const sameCloseTokens = tokenizeRichText(sameCloseSource, { syntax: sameCloseSyntax });
+assert.equal(joinTokenText(sameCloseTokens), sameCloseSource);
+const punctEqualsCount = sameCloseTokens.filter(
+  (t) => t.content === "=" && t.fontStyle === "bold",
+).length;
+assert.equal(
+  punctEqualsCount,
+  1,
+  "inline close should not emit inferred tagPrefix token when endTag is just tagClose",
+);
+
 // rawEndWord derived from custom rawClose "%fin@@" → "fin"
 const flat = tokenizeRichText(source, { syntax });
 const rawEndToken = flat.find((t) => t.content === "fin");

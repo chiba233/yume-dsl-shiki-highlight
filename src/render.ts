@@ -9,6 +9,7 @@ interface RenderSyntax {
   tagPrefix: string;
   tagOpen: string;
   tagClose: string;
+  endTag: string;
   tagDivider: string;
   rawMarker: string;
   blockMarker: string;
@@ -49,6 +50,7 @@ const buildRenderSyntax = (s: SyntaxInput): RenderSyntax => {
     tagPrefix: s.tagPrefix,
     tagOpen: s.tagOpen,
     tagClose: s.tagClose,
+    endTag: s.endTag,
     tagDivider: s.tagDivider,
     rawMarker,
     blockMarker,
@@ -165,10 +167,16 @@ const renderNodes = (
     if (frame.kind === "deferred") {
       switch (frame.deferred.kind) {
         case "inline-close":
-          pushToken(tokens, s.tagClose, colors.bracket);
-          if (!frame.deferred.shorthand) {
-            pushToken(tokens, s.tagPrefix, colors.punct, "bold");
+          if (frame.deferred.shorthand) {
+            pushToken(tokens, s.tagClose, colors.bracket);
+            break;
           }
+          if (s.endTag.startsWith(s.tagClose)) {
+            pushToken(tokens, s.tagClose, colors.bracket);
+            pushToken(tokens, s.endTag.slice(s.tagClose.length), colors.punct, "bold");
+            break;
+          }
+          pushToken(tokens, s.endTag, colors.bracket);
           break;
         case "raw-after-args":
           pushToken(tokens, s.tagClose, colors.bracket);

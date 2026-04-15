@@ -1,5 +1,15 @@
 # Changelog
 
+### 2.1.3
+
+- **Fix: inline close tokenization now follows `syntax.endTag` exactly**
+  - The renderer no longer assumes inline close is always `tagClose + tagPrefix`.
+  - For non-shorthand inline tags, emitted close tokens now match `syntax.endTag` exactly.
+  - This fixes highlight offset drift when custom syntax uses `endTag` different from `tagClose + tagPrefix` (for example `endTag: ">"`).
+- **Tests updated**
+  - Added smoke coverage to assert token text reconstruction remains identical to source when `endTag === tagClose`.
+- No public API changes
+
 ### 2.1.2
 
 - **Grammar: split escape matching by context**

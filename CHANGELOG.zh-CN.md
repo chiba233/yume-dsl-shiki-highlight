@@ -1,5 +1,15 @@
 # 更新日志
 
+### 2.1.3
+
+- **修复：inline 关闭符分词严格遵循 `syntax.endTag`**
+  - 渲染器不再假设 inline 关闭符恒等于 `tagClose + tagPrefix`。
+  - 对非 shorthand inline 标签，关闭符 token 现在与 `syntax.endTag` 完全一致。
+  - 修复了自定义语法中 `endTag` 不等于 `tagClose + tagPrefix`（例如 `endTag: ">"`）时的高亮偏移漂移问题。
+- **测试更新**
+  - 新增 smoke 覆盖：当 `endTag === tagClose` 时，token 重组文本必须与源码完全一致。
+- 无公共 API 变化
+
 ### 2.1.2
 
 - **Grammar：按上下文拆分 escape 规则**
